@@ -1,25 +1,30 @@
-import React            from 'react';
-import ReactDOM         from 'react-dom/client';
-import './index.css';
-import App              from './App';
-import reportWebVitals  from './reportWebVitals';
-
-import { WagmiProvider }            from 'wagmi';
+// src/index.js
+import './walletConfig';                     // must run first (calls createWeb3Modal & exports wagmiConfig)
+import React from 'react';
+import ReactDOM from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-
+import { WagmiProvider } from 'wagmi';
 import { wagmiConfig } from './walletConfig';
+import App from './App';
 
+// 1️⃣ Create React Query client
 const queryClient = new QueryClient();
-const root        = ReactDOM.createRoot(document.getElementById('root'));
 
-root.render(
+// 2️⃣ Render with providers in this exact order:
+ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <WagmiProvider config={wagmiConfig}>
-      <QueryClientProvider client={queryClient}>
+    {/* A) QueryClientProvider must come first */}
+    <QueryClientProvider client={queryClient}>
+      {/* B) WagmiProvider next, so its hooks can use React Query */}
+      <WagmiProvider config={wagmiConfig}>
         <App />
-      </QueryClientProvider>
-    </WagmiProvider>
+      </WagmiProvider>
+    </QueryClientProvider>
   </React.StrictMode>
 );
-
-reportWebVitals();
+createWeb3Modal({
+  wagmiConfig,
+  projectId,
+  chains,
+  mobileWallets: ['trust'],     // 👈 Only show Trust Wallet on mobile
+});
