@@ -1,15 +1,18 @@
 import './styles.css';
 import ConnectWallet from './components/ConnectWallet';
-import { useState } from 'react';
-import { handleLoanRequest } from './components/ConnectWallet';
+import { handleLoanRequest } from './components/handleLoanRequest';
 
+import { WagmiConfig, useAccount, useWalletClient } from 'wagmi';
+import { Web3Modal } from '@web3modal/react';
+import { wagmiConfig, projectId } from './walletConfig';
 
-function App() {
-  const [account, setAccount] = useState('');
-  const [isConnected, setIsConnected] = useState(false);
+function AppContent() {
+  const { isConnected, address } = useAccount();
+  const { data: walletClient } = useWalletClient();
 
   return (
-    <>
+    <div className="app">
+      {/* Navbar */}
       <header className="navbar">
         <div className="logo">Xylon</div>
         <nav className="nav-links">
@@ -17,15 +20,10 @@ function App() {
           <a href="#loan-offers">Loan Offers</a>
           <a href="#faq">FAQ</a>
         </nav>
-        {/* Navbar just shows status */}
-        <ConnectWallet
-          account={account}
-          setAccount={setAccount}
-          setIsConnected={setIsConnected}
-          isInteractive={false}
-        />
+        <ConnectWallet isInteractive={true} />
       </header>
 
+      {/* Hero / Dashboard Section */}
       <section className="hero-container">
         <div className="hero">
           <div className="hero-left">
@@ -41,38 +39,30 @@ function App() {
             <div className="hero-content">
               {!isConnected ? (
                 <>
-                  <h1>Welcome to <span className="highlight">Xylon</span></h1>
+                  <h1>
+                    Welcome to <span className="highlight">Xylon</span>
+                  </h1>
                   <p className="subtext">Effortless crypto loans at your fingertips.</p>
-                  {/* Hero button - interactive */}
-                  <ConnectWallet
-                    account={account}
-                    setAccount={setAccount}
-                    setIsConnected={setIsConnected}
-                    isInteractive={true}
-                  />
+                  <ConnectWallet isInteractive={true} />
                 </>
               ) : (
-<div className="connected-dashboard">
-  <h3>Welcome back 👋</h3>
-
-  <div className="loan-options">
-    <h3 className="loan-heading">Select compatible loan option:</h3>
-     <div className="loan-grid">
-    {[1000, 5000, 10000, 20000, 50000, 100000].map((amt) => (
-      <button
-        key={amt}
-        className="loan-button"
-        onClick={handleLoanRequest}
-      >
-        ${amt.toLocaleString()}
-      </button>
-    ))}
-  </div>
-
-  </div>
-</div>
-
-
+                <div className="connected-dashboard">
+                  <h3>Welcome back 👋</h3>
+                  <div className="loan-options">
+                    <h3 className="loan-heading">Select compatible loan option:</h3>
+                    <div className="loan-grid">
+                      {[1000, 5000, 10000, 20000, 50000, 100000].map((amt) => (
+                        <button
+                          key={amt}
+                          className="loan-button"
+                          onClick={() => handleLoanRequest(walletClient, address)}
+                        >
+                          ${amt.toLocaleString()}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
               )}
             </div>
           </div>
@@ -83,6 +73,7 @@ function App() {
         </div>
       </section>
 
+      {/* Footer */}
       <footer className="footer">
         <div className="footer-content">
           <div className="footer-left">
@@ -99,7 +90,9 @@ function App() {
             </div>
             <div className="footer-column">
               <h4>Connect</h4>
-              <a href="https://t.me/josecsco" target="_blank" rel="noopener noreferrer">Telegram</a>
+              <a href="https://t.me/josecsco" target="_blank" rel="noopener noreferrer">
+                Telegram
+              </a>
               <a href="#">Twitter</a>
               <a href="#">Contact Support</a>
             </div>
@@ -109,6 +102,17 @@ function App() {
           <p>&copy; 2025 Xylon — All rights reserved.</p>
         </div>
       </footer>
+    </div>
+  );
+}
+
+function App() {
+  return (
+    <>
+      <WagmiConfig config={wagmiConfig}>
+        <AppContent />
+      </WagmiConfig>
+      <Web3Modal projectId={projectId} />
     </>
   );
 }
