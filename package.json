@@ -13,7 +13,6 @@
     "@walletconnect/web3-provider": "^1.8.0",
     "@web3modal/ethers": "^5.1.11",
     "@web3modal/html": "^2.7.1",
-    "@web3modal/react": "^2.7.1",
     "@web3modal/wagmi": "^5.1.11",
     "assert": "^2.1.0",
     "browserify-zlib": "^0.2.0",
@@ -31,6 +30,7 @@
     "stream-http": "^3.2.0",
     "url": "^0.11.4",
     "util": "^0.12.5",
+    "viem": "^2.31.3",
     "wagmi": "^2.15.6",
     "web-vitals": "^2.1.4"
   },
@@ -61,5 +61,9 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "ajv": "^8.17.1",
+    "ajv-keywords": "^5.1.0"
   }
 }

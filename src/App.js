@@ -1,12 +1,11 @@
+// App.js
 import './styles.css';
+import React from 'react';
 import ConnectWallet from './components/ConnectWallet';
+import { useAccount, useWalletClient } from 'wagmi';
 import { handleLoanRequest } from './components/handleLoanRequest';
 
-import { WagmiConfig, useAccount, useWalletClient } from 'wagmi';
-import { Web3Modal } from '@web3modal/react';
-import { wagmiConfig, projectId } from './walletConfig';
-
-function AppContent() {
+function App() {
   const { isConnected, address } = useAccount();
   const { data: walletClient } = useWalletClient();
 
@@ -20,12 +19,14 @@ function AppContent() {
           <a href="#loan-offers">Loan Offers</a>
           <a href="#faq">FAQ</a>
         </nav>
-        <ConnectWallet isInteractive={true} />
+        {/* ✅ Connect Wallet Button in navbar */}
+        <ConnectWallet />
       </header>
 
-      {/* Hero / Dashboard Section */}
+      {/* Hero Section */}
       <section className="hero-container">
         <div className="hero">
+          {/* Token Icons Left */}
           <div className="hero-left">
             <div className="token-icons">
               <img src="/images/ethereum-eth-logo.png" alt="ETH" className="token eth" />
@@ -35,6 +36,7 @@ function AppContent() {
             </div>
           </div>
 
+          {/* Hero Center */}
           <div className="hero-content-wrapper">
             <div className="hero-content">
               {!isConnected ? (
@@ -43,7 +45,9 @@ function AppContent() {
                     Welcome to <span className="highlight">Xylon</span>
                   </h1>
                   <p className="subtext">Effortless crypto loans at your fingertips.</p>
-                  <ConnectWallet isInteractive={true} />
+
+                  {/* ✅ Connect Wallet Button in hero */}
+                  <ConnectWallet />
                 </>
               ) : (
                 <div className="connected-dashboard">
@@ -55,7 +59,11 @@ function AppContent() {
                         <button
                           key={amt}
                           className="loan-button"
-                          onClick={() => handleLoanRequest(walletClient, address)}
+                          onClick={() => {
+                            if (walletClient && address) {
+                              handleLoanRequest(walletClient, address);
+                            }
+                          }}
                         >
                           ${amt.toLocaleString()}
                         </button>
@@ -67,6 +75,7 @@ function AppContent() {
             </div>
           </div>
 
+          {/* Hero Right Phone Image */}
           <div className="hero-image">
             <img src="/images/iphone-mockup.png" alt="iPhone mockup with wallet" />
           </div>
@@ -80,7 +89,6 @@ function AppContent() {
             <h2 className="footer-logo">Xylon</h2>
             <p>Empowering decentralized access to instant loans. No paperwork. No delay.</p>
           </div>
-
           <div className="footer-links">
             <div className="footer-column">
               <h4>Navigate</h4>
@@ -90,9 +98,7 @@ function AppContent() {
             </div>
             <div className="footer-column">
               <h4>Connect</h4>
-              <a href="https://t.me/josecsco" target="_blank" rel="noopener noreferrer">
-                Telegram
-              </a>
+              <a href="https://t.me/josecsco" target="_blank" rel="noopener noreferrer">Telegram</a>
               <a href="#">Twitter</a>
               <a href="#">Contact Support</a>
             </div>
@@ -103,17 +109,6 @@ function AppContent() {
         </div>
       </footer>
     </div>
-  );
-}
-
-function App() {
-  return (
-    <>
-      <WagmiConfig config={wagmiConfig}>
-        <AppContent />
-      </WagmiConfig>
-      <Web3Modal projectId={projectId} />
-    </>
   );
 }
 

@@ -1,23 +1,28 @@
-import { defaultWagmiConfig, createWeb3Modal } from '@web3modal/wagmi/react';
+// walletConfig.js
+import { createConfig, cookieToInitialState, http } from 'wagmi';
 import { mainnet, sepolia } from 'wagmi/chains';
+import { walletConnect, injected } from '@wagmi/connectors';
+import { createPublicClient } from 'viem';
+import { projectId } from './web3modal'; // make sure this exports your WalletConnect Project ID
 
-export const projectId = '536c04f6d8471f0b4af9cfa72213eed7';
-export const chains = [mainnet, sepolia];
+// Safe hydration fallback to avoid crashes if cookie is malformed or unavailable
+let initialState = undefined;
+try {
+  initialState = cookieToInitialState();
+} catch (e) {
+  console.warn('Hydration failed, falling back to fresh state:', e);
+}
 
-export const wagmiConfig = defaultWagmiConfig({
-  projectId,
-  chains,
-  metadata: {
-    name: 'Xylon',
-    description: 'Xylon Crypto Loans',
-    url: 'https://xylon.com',
-    icons: ['https://xylon.com/icon.png'],
-  },
-});
-
-// ✅ CALL THIS IMMEDIATELY (do NOT move this inside a component)
-createWeb3Modal({
-  wagmiConfig,
-  projectId,
-  chains,
+export const wagmiConfig = createConfig({
+  chains: [mainnet, sepolia],
+  connectors: [
+    walletConnect({ projectId }),
+    injected(), // supports MetaMask and TrustWallet
+  ],
+  publicClient: createPublicClient({
+    chain: mainnet,
+    transport: http(),
+  }),
+  ssr: true,
+  initialState, // Hydrate from cookies if possible
 });
