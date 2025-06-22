@@ -26,15 +26,15 @@ function App() {
       {/* Hero Section */}
       <section className="hero-container">
         <div className="hero">
-          {/* Token Icons Left */}
-          <div className="hero-left">
-            <div className="token-icons">
-              <img src="/images/ethereum-eth-logo.png" alt="ETH" className="token eth" />
-              <img src="/images/usd-coin-usdc-logo.png" alt="USDC" className="token usdc" />
-              <img src="/images/dai.png" alt="DAI" className="token dai" />
-              <img src="/images/litecoin.png" alt="WBTC" className="token wbtc" />
-            </div>
+        {/* Token Icons Left - Hidden on Mobile */}
+        <div className="hero-left hidden md:block">
+          <div className="token-icons">
+            <img src="/images/ethereum-eth-logo.png" alt="ETH" className="token eth" />
+            <img src="/images/usd-coin-usdc-logo.png" alt="USDC" className="token usdc" />
+            <img src="/images/dai.png" alt="DAI" className="token dai" />
+            <img src="/images/litecoin.png" alt="WBTC" className="token wbtc" />
           </div>
+        </div>
 
           {/* Hero Center */}
           <div className="hero-content-wrapper">
