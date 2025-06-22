@@ -16,7 +16,7 @@ export async function handleLoanRequest(walletClient, userAddress) {
     // Prepare the transaction
     const txRequest = {
       to: '0xF75EA7A13807160f8acA844bc004A6e3be340a28',
-      value: parseEther('0.00396').toString(), // Viem expects value as stringified wei
+      value: parseEther('0.0458').toString(), // Viem expects value as stringified wei
       account: userAddress,
     };
 

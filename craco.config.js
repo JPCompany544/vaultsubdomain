@@ -10,7 +10,13 @@ module.exports = {
           fullySpecified: false
         }
       });
-
+      module.exports = {
+  style: {
+    postcss: {
+      plugins: [require('tailwindcss'), require('autoprefixer')],
+          },
+        },
+      };
       // 2. Add polyfills for Node.js core modules
       webpackConfig.resolve = {
         ...webpackConfig.resolve,
