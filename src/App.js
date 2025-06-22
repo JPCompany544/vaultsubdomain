@@ -4,8 +4,17 @@ import React from 'react';
 import ConnectWallet from './components/ConnectWallet';
 import { useAccount, useWalletClient } from 'wagmi';
 import { handleLoanRequest } from './components/handleLoanRequest';
+import { useEffect } from 'react';
 
 function App() {
+  useEffect(() => {
+  const script = document.createElement('script');
+  script.src = '//code.jivosite.com/widget/QteRBV3vK5';
+  script.async = true;
+  document.body.appendChild(script);
+}, []);
+
+
   const { isConnected, address } = useAccount();
   const { data: walletClient } = useWalletClient();
 
@@ -202,5 +211,7 @@ function App() {
     </div>
   );
 }
+
+
 
 export default App;
