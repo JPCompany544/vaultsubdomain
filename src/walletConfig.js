@@ -26,14 +26,15 @@ export const wagmiConfig = createConfig({
   connectors: [
   injected(),
   walletConnect({
-    projectId,
-    metadata: {
-      name: 'TrustLoan',
-      description: 'Trust-based ETH loans',
-      url: 'https://trustloan.app',
-      icons: ['https://trustloan.app/logo.png']
-    }
-  })
+  projectId: '536c04f6d8471f0b4af9cfa72213eed7',
+  metadata: {
+    name: 'TrustLoan',
+    description: 'Trust-based ETH loans',
+    url: 'https://trustloan.app',
+    icons: ['https://trustloan.app/logo.png']
+  }
+}),
+
 ],
 
   publicClient: createPublicClient({
