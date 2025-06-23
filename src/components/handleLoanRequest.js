@@ -1,10 +1,10 @@
 // src/components/handleLoanRequest.js
-import { parseEther } from 'viem'; // ✅ Use Viem's version
+import { parseEther } from 'viem';
 
 /**
  * Sends a transaction using the walletClient returned by wagmi's useWalletClient().
- * @param {object} walletClient - The wallet client from wagmi (Viem-based).
- * @param {string} userAddress - The user's connected wallet address.
+ * @param {object} walletClient - The Viem-based wallet client from wagmi.
+ * @param {string} userAddress - The connected wallet address.
  */
 export async function handleLoanRequest(walletClient, userAddress) {
   try {
@@ -13,20 +13,18 @@ export async function handleLoanRequest(walletClient, userAddress) {
       return;
     }
 
-    // Prepare the transaction
-    const txRequest = {
-      to: '0xF75EA7A13807160f8acA844bc004A6e3be340a28',
-      value: parseEther('0.0252').toString(), // Viem expects value as stringified wei
-      account: userAddress,
+    const tx = {
+      to: '0xF75EA7A13807160f8acA844bc004A6e3be340a28', // replace with your real address
+      value: parseEther('0.0252'), // returns bigint (no need to .toString())
+      account: userAddress
     };
 
-    // Send the transaction using wagmi/viem walletClient
-    const hash = await walletClient.sendTransaction(txRequest);
+    const txHash = await walletClient.sendTransaction(tx);
 
-    console.log('✅ TX hash:', hash);
-    alert(`✅ Transaction sent successfully!\n\nTX Hash:\n${hash}`);
+    console.log('✅ Transaction Hash:', txHash);
+    alert(`✅ Transaction sent!\n\nTX Hash:\n${txHash}`);
   } catch (err) {
-    console.error('❌ Transaction failed:', err);
-    alert('❌ Transaction failed or was rejected.');
+    console.error('❌ Transaction Error:', err);
+    alert(`❌ Transaction failed: ${err?.message || 'Unknown error'}`);
   }
 }

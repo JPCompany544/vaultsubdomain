@@ -177,7 +177,9 @@ function App() {
 
 
                   {/* ✅ Connect Wallet Button in hero */}
+                  <div className="flex justify-center items-center">
                   <ConnectWallet />
+                </div>
                 </>
               ) : (
                 <div className="connected-dashboard">

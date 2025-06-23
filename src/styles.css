@@ -308,6 +308,21 @@ body {
   }
 }
 
+w3m-button::part(button) {
+  @apply bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-xl px-4 py-2 shadow-md;
+}
+
+w3m-button::part(icon) {
+  margin-right: 0.5rem; /* spacing between icon and text */
+}
+
+w3m-button::part(button) {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+
 /* === END HERO CLEANUP === */
 
 
