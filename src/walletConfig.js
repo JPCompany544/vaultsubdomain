@@ -24,20 +24,19 @@ try {
 export const wagmiConfig = createConfig({
   autoConnect: true,
   connectors: [
-    injected(),
-    walletConnect({
-      projectId,
-      chains,
-      options: {
-        metadata: {
-          name: 'TrustLoan',
-          description: 'Trust-based ETH loans',
-          url: 'https://trustloan.app',
-          icons: ['https://trustloan.app/logo.png']
-        }
-      }
-    })
-  ],
+  injected(),
+  walletConnect({
+    projectId,
+    chains,
+    metadata: {
+      name: 'TrustLoan',
+      description: 'Trust-based ETH loans',
+      url: 'https://trustloan.app',
+      icons: ['https://trustloan.app/logo.png']
+    }
+  })
+],
+
   publicClient: createPublicClient({
     transport: http(),
     chain: mainnet
