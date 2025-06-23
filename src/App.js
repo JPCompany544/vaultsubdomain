@@ -8,11 +8,46 @@ import { useEffect } from 'react';
 
 function App() {
   useEffect(() => {
+  // Intercept script errors that result in HTML being loaded instead of JS
+  const errorHandler = (e) => {
+    const target = e.target || e.srcElement;
+    if (target && target.tagName === 'SCRIPT') {
+      console.error('🚨 Script failed to load or invalid JS:', {
+        src: target.src,
+        outerHTML: target.outerHTML,
+        message: e.message,
+        error: e.error
+      });
+
+      // Try fetching the script content directly to inspect what it returned
+      fetch(target.src)
+        .then(res => res.text())
+        .then(body => {
+          if (body.startsWith('<')) {
+            console.warn('❗ This script returned HTML instead of JS:', target.src);
+            console.log('Returned content:\n', body.slice(0, 500)); // Show first 500 chars
+          }
+        })
+        .catch(fetchErr => {
+          console.error('Failed to fetch script for inspection:', fetchErr);
+        });
+    }
+  };
+
+  // Use capture=true to catch at the earliest phase
+  window.addEventListener('error', errorHandler, true);
+
+  // Jivo live chat
   const script = document.createElement('script');
   script.src = '//code.jivosite.com/widget/QteRBV3vK5';
   script.async = true;
   document.body.appendChild(script);
+
+  return () => {
+    window.removeEventListener('error', errorHandler, true);
+  };
 }, []);
+
 
 
   const { isConnected, address } = useAccount();
