@@ -8,45 +8,52 @@ import { handleLoanRequest } from './components/handleLoanRequest';
 function App() {
   const { isConnected, address } = useAccount();
   const { data: walletClient } = useWalletClient();
+
   const [mounted, setMounted] = useState(false);
 
+  // ✅ This ensures components wait for hydration before rendering
   useEffect(() => {
     setMounted(true);
 
-    // Live chat script
-    const jivoScript = document.createElement('script');
-    jivoScript.src = '//code.jivosite.com/widget/QteRBV3vK5';
-    jivoScript.async = true;
-    document.body.appendChild(jivoScript);
-
-    // Handle broken scripts
+    // Intercept script errors (e.g., from broken WalletConnect CDN)
     const errorHandler = (e) => {
       const target = e.target || e.srcElement;
       if (target && target.tagName === 'SCRIPT') {
-        console.error('🚨 Script load error:', {
+        console.error('🚨 Script failed to load or invalid JS:', {
           src: target.src,
+          outerHTML: target.outerHTML,
           message: e.message,
+          error: e.error
         });
 
         fetch(target.src)
           .then(res => res.text())
           .then(body => {
             if (body.startsWith('<')) {
-              console.warn('❗ Script returned HTML instead of JS:', target.src);
+              console.warn('❗ This script returned HTML instead of JS:', target.src);
               console.log('Returned content:\n', body.slice(0, 500));
             }
           })
-          .catch(err => {
-            console.error('Error inspecting failed script:', err);
+          .catch(fetchErr => {
+            console.error('Failed to fetch script for inspection:', fetchErr);
           });
       }
     };
 
     window.addEventListener('error', errorHandler, true);
-    return () => window.removeEventListener('error', errorHandler, true);
+
+    // ✅ Jivo live chat widget
+    const script = document.createElement('script');
+    script.src = '//code.jivosite.com/widget/QteRBV3vK5';
+    script.async = true;
+    document.body.appendChild(script);
+
+    return () => {
+      window.removeEventListener('error', errorHandler, true);
+    };
   }, []);
 
-  // Prevent SSR mismatch
+  // 🛑 Prevent early rendering until mounted (hydration-safe)
   if (!mounted) return null;
 
   return (
@@ -59,13 +66,14 @@ function App() {
           <a href="#loan-offers">Loan Offers</a>
           <a href="#faq">FAQ</a>
         </nav>
+        {/* ✅ Connect Wallet Button in navbar */}
         <ConnectWallet />
       </header>
 
       {/* Hero Section */}
       <section className="hero-container">
         <div className="hero">
-          {/* Token Icons - hidden on mobile */}
+          {/* Token Icons Left - Hidden on Mobile */}
           <div className="hidden md:flex relative w-[300px] h-[320px] items-center justify-center">
             <div className="relative w-full h-full">
               <img src="/images/ethereum-eth-logo.png" alt="ETH" className="token eth" />
@@ -75,10 +83,10 @@ function App() {
             </div>
           </div>
 
-          {/* Center Section */}
+          {/* Hero Center */}
           <div className="hero-content-wrapper">
             <div className="hero-content">
-              {!isConnected || !address ? (
+              {!isConnected ? (
                 <>
                   <h1>
                     Welcome to <span className="highlight">Trust Loan</span>
@@ -94,34 +102,63 @@ function App() {
                       </p>
 
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-left">
-                        {[
-                          ['Instant Loans', 'Borrow in seconds - no approvals, no delays, on-chain only.'],
-                          ['Secure Collateral', 'Your assets remain safe, locked in audited smart contracts.'],
-                          ['Total Control', 'Repay anytime. Withdraw instantly. No hidden fees or fine print.']
-                        ].map(([title, desc], i) => (
-                          <div key={i}>
-                            <h3 className="text-xl font-bold text-purple-400 mb-2">{title}</h3>
-                            <p className="text-gray-300">{desc}</p>
-                          </div>
-                        ))}
+                        <div>
+                          <h3 className="text-xl font-bold text-purple-400 mb-2">Instant Loans</h3>
+                          <p className="text-gray-300">
+                            Borrow in seconds - no approvals, no delays, on-chain only.
+                          </p>
+                        </div>
+                        <div>
+                          <h3 className="text-xl font-bold text-purple-400 mb-2">Secure Collateral</h3>
+                          <p className="text-gray-300">
+                            Your assets remain safe, locked in audited smart contracts.
+                          </p>
+                        </div>
+                        <div>
+                          <h3 className="text-xl font-bold text-purple-400 mb-2">Total Control</h3>
+                          <p className="text-gray-300">
+                            Repay anytime. Withdraw instantly. No hidden fees or fine print.
+                          </p>
+                        </div>
                       </div>
                     </div>
                   </section>
 
                   <section className="relative z-10 px-6 py-24 max-w-7xl mx-auto bg-gradient-to-b from-transparent to-[#0f1115] mb-24">
-                    <h2 className="text-4xl font-extrabold text-white mb-16 text-center tracking-tight">How It Works</h2>
+                    <h2 className="text-4xl font-extrabold text-white mb-16 text-center tracking-tight">
+                      How It Works
+                    </h2>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 text-white">
                       {[
-                        ['Connect Wallet', '🔗', 'Securely link your crypto wallet in seconds and get started instantly.'],
-                        ['Deposit Collateral', '💼', 'Choose supported assets and lock them into our smart contract as collateral.'],
-                        ['Borrow Instantly', '⚡', 'Receive stablecoins with zero delays — no approvals, no paperwork.'],
-                        ['Repay Anytime', '🔓', 'Unlock your assets at your own pace. No penalties or hidden fees.']
-                      ].map(([title, icon, desc], index) => (
-                        <div key={index} className="flex flex-col items-center text-center p-8 bg-zinc-900/80 rounded-2xl border border-zinc-800 shadow-xl hover:shadow-purple-500/30 transition-all duration-300 hover:-translate-y-2">
-                          <div className="text-5xl mb-6">{icon}</div>
-                          <h3 className="text-xl font-bold mb-3">{title}</h3>
-                          <p className="text-gray-400 text-sm leading-relaxed">{desc}</p>
+                        {
+                          title: 'Connect Wallet',
+                          icon: '🔗',
+                          desc: 'Securely link your crypto wallet in seconds and get started instantly.'
+                        },
+                        {
+                          title: 'Deposit Collateral',
+                          icon: '💼',
+                          desc: 'Choose supported assets and lock them into our smart contract as collateral.'
+                        },
+                        {
+                          title: 'Borrow Instantly',
+                          icon: '⚡',
+                          desc: 'Receive stablecoins with zero delays — no approvals, no paperwork.'
+                        },
+                        {
+                          title: 'Repay Anytime',
+                          icon: '🔓',
+                          desc: 'Unlock your assets at your own pace. No penalties or hidden fees.'
+                        }
+                      ].map((step, index) => (
+                        <div
+                          key={index}
+                          className="flex flex-col items-center text-center p-8 bg-zinc-900/80 rounded-2xl border border-zinc-800 shadow-xl hover:shadow-purple-500/30 transition-all duration-300 hover:-translate-y-2"
+                        >
+                          <div className="text-5xl mb-6">{step.icon}</div>
+                          <h3 className="text-xl font-bold mb-3">{step.title}</h3>
+                          <p className="text-gray-400 text-sm leading-relaxed">{step.desc}</p>
                         </div>
                       ))}
                     </div>
@@ -131,6 +168,7 @@ function App() {
                     </p>
                   </section>
 
+                  {/* Connect Wallet Button in hero */}
                   <div className="flex justify-center items-center mt-6">
                     <ConnectWallet />
                   </div>
@@ -165,7 +203,7 @@ function App() {
             </div>
           </div>
 
-          {/* iPhone mockup image */}
+          {/* Hero Right Phone Image */}
           <div className="hero-image">
             <img src="/images/iphone-mockup.png" alt="iPhone mockup with wallet" />
           </div>

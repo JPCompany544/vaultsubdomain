@@ -1,21 +1,34 @@
 // src/components/ConnectWallet.js
 import React, { useEffect, useState } from 'react';
+import { useAccount, useDisconnect } from 'wagmi';
+import { useWeb3Modal } from '@web3modal/wagmi/react';
 
-// Optional: your global styles
-import '../styles.css';
+export default function ConnectWallet({ onConnect, onDisconnect }) {
+  const [mounted, setMounted] = useState(false);
+  const { isConnected } = useAccount();
+  const { disconnect } = useDisconnect();
+  const modal = useWeb3Modal();
 
-export default function ConnectWallet() {
-  const [isMounted, setIsMounted] = useState(false);
-
+  // Track component mount for hydration
   useEffect(() => {
-    setIsMounted(true);
+    setMounted(true);
   }, []);
 
-  // Prevent hydration mismatch for server/client render
-  if (!isMounted) return null;
+  // Fire onConnect / onDisconnect when wallet status changes
+  useEffect(() => {
+    if (!mounted) return;
+    if (isConnected) {
+      onConnect?.();
+    } else {
+      onDisconnect?.();
+    }
+  }, [isConnected, mounted]);
 
-  // Web3Modal native button – automatically styled
+  if (!mounted) return null;
+
   return (
-    <w3m-button />
+    <div>
+      <w3m-button />
+    </div>
   );
 }
