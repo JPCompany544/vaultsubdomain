@@ -4,18 +4,26 @@ import React, { useEffect, useState } from 'react';
 import ConnectWallet from './components/ConnectWallet';
 import { useAccount, useWalletClient } from 'wagmi';
 import { handleLoanRequest } from './components/handleLoanRequest';
+import LiveChat from './components/LiveChat'; // make sure path is correct
+
 
 function App() {
   const { isConnected, address } = useAccount();
   const { data: walletClient } = useWalletClient();
-
   const [mounted, setMounted] = useState(false);
 
-  // ✅ This ensures components wait for hydration before rendering
   useEffect(() => {
     setMounted(true);
 
-    // Intercept script errors (e.g., from broken WalletConnect CDN)
+    // ✅ Inject Tawk.to chat widget
+    const s1 = document.createElement('script');
+    s1.async = true;
+    s1.src = 'https://embed.tawk.to/685d37b90d497d191b31a29f/1ium23bm3'; // Your real widget link
+    s1.charset = 'UTF-8';
+    s1.setAttribute('crossorigin', '*');
+    document.body.appendChild(s1);
+
+    // 🚨 Error handler for script issues (already in your code)
     const errorHandler = (e) => {
       const target = e.target || e.srcElement;
       if (target && target.tagName === 'SCRIPT') {
@@ -42,18 +50,11 @@ function App() {
 
     window.addEventListener('error', errorHandler, true);
 
-    // ✅ Jivo live chat widget
-    const script = document.createElement('script');
-    script.src = '//code.jivosite.com/widget/QteRBV3vK5';
-    script.async = true;
-    document.body.appendChild(script);
-
     return () => {
       window.removeEventListener('error', errorHandler, true);
     };
   }, []);
 
-  // 🛑 Prevent early rendering until mounted (hydration-safe)
   if (!mounted) return null;
 
   return (
@@ -240,4 +241,4 @@ function App() {
   );
 }
 
-export default App;
+export default App
