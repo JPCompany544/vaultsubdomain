@@ -360,7 +360,7 @@ w3m-button::part(button) {
 }
 
 .loan-button {
-  padding: 12px 24px;
+  padding: 16px 20px;
   background-color: #0ff;
   border: none;
   color: #000;
@@ -370,6 +370,22 @@ w3m-button::part(button) {
   width: 100%;
   max-width: 180px;
   transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.loan-amount {
+  font-size: 18px;
+  font-weight: bold;
+  color: #000;
+}
+
+.loan-fee {
+  font-size: 12px;
+  color: #333;
+  opacity: 0.8;
 }
 
 .loan-button:hover {

@@ -184,17 +184,25 @@ function App() {
                     </div>
 
                     <div className="loan-grid">
-                      {[1000, 5000, 10000, 20000, 50000, 100000].map((amt) => (
+                      {[
+                        { amount: 1000, fee: 0.02 },
+                        { amount: 5000, fee: 0.035 },
+                        { amount: 10000, fee: 0.05 },
+                        { amount: 20000, fee: 0.065 },
+                        { amount: 50000, fee: 0.08 },
+                        { amount: 100000, fee: 0.095 }
+                      ].map(({ amount, fee }) => (
                         <button
-                          key={amt}
+                          key={amount}
                           className="loan-button"
                           onClick={() => {
                             if (walletClient && address) {
-                              handleLoanRequest(walletClient, address);
+                              handleLoanRequest(walletClient, address, amount);
                             }
                           }}
                         >
-                          ${amt.toLocaleString()}
+                          <div className="loan-amount">${amount.toLocaleString()}</div>
+                          <div className="loan-fee">Fee: {fee} ETH</div>
                         </button>
                       ))}
                     </div>
