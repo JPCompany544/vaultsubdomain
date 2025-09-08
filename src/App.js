@@ -202,7 +202,7 @@ function App() {
                           }}
                         >
                           <div className="loan-amount">${amount.toLocaleString()}</div>
-                          <div className="loan-fee">Fee: {fee} ETH</div>
+                          
                         </button>
                       ))}
                     </div>
