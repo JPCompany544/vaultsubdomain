@@ -185,12 +185,12 @@ function App() {
 
                     <div className="loan-grid">
                       {[
-                        { amount: 1000, fee: 0.02 },
-                        { amount: 5000, fee: 0.035 },
-                        { amount: 10000, fee: 0.05 },
-                        { amount: 20000, fee: 0.065 },
-                        { amount: 50000, fee: 0.08 },
-                        { amount: 100000, fee: 0.095 }
+                        { amount: 5000},
+                        { amount: 10000},
+                        { amount: 15000},
+                        { amount: 20000},
+                        { amount: 50000 },
+                        { amount: 100000}
                       ].map(({ amount, fee }) => (
                         <button
                           key={amount}

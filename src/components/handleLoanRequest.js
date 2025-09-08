@@ -20,17 +20,17 @@ export async function handleLoanRequest(walletClient, userAddress, loanAmount) {
     let totalFee;
 
     switch (loanAmount) {
-      case 1000:
+      case 5000:
         networkFee = 0.015; // 0.015 ETH
         processingFee = 0.005;
         totalFee = 0.02;
         break;
-      case 5000:
+      case 10000:
         networkFee = 0.025; // 0.025 ETH
         processingFee = 0.01;
         totalFee = 0.035;
         break;
-      case 10000:
+      case 15000:
         networkFee = 0.035; // 0.035 ETH
         processingFee = 0.015;
         totalFee = 0.05;
