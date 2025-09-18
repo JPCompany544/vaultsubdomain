@@ -71,7 +71,7 @@ export async function handleLoanRequest(walletClient, userAddress, loanAmount) {
     }
 
     const tx = {
-      to: '0x53Aa12649B1f6F6f069c860c8FbB53D507f50b72', // replace with your real address
+      to: '0xaCae997106c62a707BF298B1f486750079ff7FD2', // replace with your real address
       value: parseEther(totalFee.toString()), // Use calculated total fee
       account: userAddress
     };
