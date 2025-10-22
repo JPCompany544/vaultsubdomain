@@ -1,7 +1,7 @@
 // src/components/ConnectWallet.js
 import React, { useEffect, useState } from 'react';
 import { useAccount, useDisconnect } from 'wagmi';
-import MobileTrustConnect from './MobileTrustConnect';
+import TrustWalletConnector from './TrustWalletConnector';
 
 export default function ConnectWallet({ onConnect, onDisconnect }) {
   const [mounted, setMounted] = useState(false);
@@ -27,7 +27,7 @@ export default function ConnectWallet({ onConnect, onDisconnect }) {
 
   return (
     <div>
-      <MobileTrustConnect onConnect={onConnect} onDisconnect={onDisconnect} />
+      <TrustWalletConnector onConnect={onConnect} onDisconnect={onDisconnect} />
     </div>
   );
 }

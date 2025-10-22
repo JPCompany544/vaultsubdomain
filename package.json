@@ -10,6 +10,8 @@
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^13.5.0",
     "@wagmi/connectors": "^5.8.5",
+    "@walletconnect/ethereum-provider": "^2.22.4",
+    "@walletconnect/universal-provider": "^2.22.4",
     "@walletconnect/web3-provider": "^1.8.0",
     "@web3modal/ethers": "^5.1.11",
     "@web3modal/html": "^2.7.1",
