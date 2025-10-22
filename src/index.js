@@ -38,6 +38,16 @@ createWeb3Modal({
   featuredWalletIds: [
     'c57ca95b47569778a828d19178114f4db188b89b763c899ba0be274e97267d96d' // Trust Wallet ID
   ],
+  mobileWallets: [
+    {
+      id: 'trust',
+      name: 'Trust Wallet',
+      links: {
+        native: 'trust://wc?uri=',
+        universal: 'https://link.trustwallet.com/wc'
+      }
+    }
+  ],
   enableOnramp: false,
 });
 
