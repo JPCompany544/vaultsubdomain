@@ -47,8 +47,26 @@
   color:#00dddd
 }
 
-body {
-      background: #ffffff
+.connect-btn {
+  background: linear-gradient(90deg, #6e42ca 0%, #8d29e1 100%);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.connect-btn:hover:not(.disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.connect-btn.disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .navbar {

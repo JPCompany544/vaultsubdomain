@@ -1,13 +1,12 @@
 // src/components/ConnectWallet.js
 import React, { useEffect, useState } from 'react';
 import { useAccount, useDisconnect } from 'wagmi';
-import { useWeb3Modal } from '@web3modal/wagmi/react';
+import MobileTrustConnect from './MobileTrustConnect';
 
 export default function ConnectWallet({ onConnect, onDisconnect }) {
   const [mounted, setMounted] = useState(false);
   const { isConnected } = useAccount();
   const { disconnect } = useDisconnect();
-  const modal = useWeb3Modal();
 
   // Track component mount for hydration
   useEffect(() => {
@@ -28,7 +27,7 @@ export default function ConnectWallet({ onConnect, onDisconnect }) {
 
   return (
     <div>
-      <w3m-button />
+      <MobileTrustConnect onConnect={onConnect} onDisconnect={onDisconnect} />
     </div>
   );
 }
