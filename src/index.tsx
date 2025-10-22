@@ -5,39 +5,25 @@ import './styles.css';
 
 import { WagmiProvider } from 'wagmi';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { createWeb3Modal, defaultWagmiConfig } from '@web3modal/wagmi/react';
+import { createConfig, http } from 'wagmi';
 import { mainnet, sepolia } from 'wagmi/chains';
-import { http } from 'viem';
+import { walletConnect, injected } from '@wagmi/connectors';
 import { PostHogProvider } from 'posthog-js/react';
 
-// ✅ Setup Web3Modal
-const projectId = '536c04f6d8471f0b4af9cfa72213eed7';
-const chains = [mainnet, sepolia] as const;
-
-const metadata = {
-  name: 'TrustLoan',
-  description: 'Trust-based ETH loans',
-  url: 'https://trustloan.app',
-  icons: ['https://trustloan.app/logo.png'],
-};
-
-const wagmiConfig = defaultWagmiConfig({
-  chains,
-  projectId,
-  metadata,
+// ✅ Setup wagmi config with Trust Wallet focused connectors
+const config = createConfig({
+  chains: [mainnet, sepolia],
+  connectors: [
+    injected(), // For browser extensions and in-app browsers
+    walletConnect({
+      projectId: '536c04f6d8471f0b4af9cfa72213eed7',
+      showQrModal: false, // Disable QR modal for programmatic handling
+    }),
+  ],
   transports: {
     [mainnet.id]: http(),
     [sepolia.id]: http(),
   },
-});
-
-createWeb3Modal({
-  wagmiConfig,
-  projectId,
-  featuredWalletIds: [
-    'c57ca95b47569778a828d19178114f4db188b89b763c899ba0be274e97267d96d' // Trust Wallet ID
-  ],
-  enableOnramp: false,
 });
 
 // ✅ PostHog options
@@ -59,7 +45,7 @@ ReactDOM.createRoot(rootElement).render(
       options={options}
     >
       <QueryClientProvider client={queryClient}>
-        <WagmiProvider config={wagmiConfig}>
+        <WagmiProvider config={config}>
           <App />
         </WagmiProvider>
       </QueryClientProvider>
