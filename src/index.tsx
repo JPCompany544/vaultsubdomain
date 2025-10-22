@@ -9,12 +9,19 @@ import { createConfig, http } from 'wagmi';
 import { mainnet, sepolia } from 'wagmi/chains';
 import { walletConnect, injected } from '@wagmi/connectors';
 import { PostHogProvider } from 'posthog-js/react';
+import { TrustWalletConnector } from './connectors/trustWalletConnector';
 
-// ✅ Setup wagmi config with Trust Wallet focused connectors
+// ✅ Setup wagmi config with Trust Wallet prioritized connector
 const config = createConfig({
   chains: [mainnet, sepolia],
   connectors: [
-    injected(), // For browser extensions and in-app browsers
+    // Trust Wallet connector (prioritized for Trust Wallet environments)
+    new TrustWalletConnector({
+      chains: [mainnet, sepolia],
+    }),
+    // Injected connector for other browser extensions
+    injected(),
+    // WalletConnect as fallback
     walletConnect({
       projectId: '536c04f6d8471f0b4af9cfa72213eed7',
       showQrModal: false, // Disable QR modal for programmatic handling
