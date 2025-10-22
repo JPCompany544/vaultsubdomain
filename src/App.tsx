@@ -22,8 +22,8 @@ function App(): React.ReactElement {
     //   setShowOnboarding(true);
     // }
 
-    // Temporarily show onboarding on every refresh for testing
-    setShowOnboarding(true);
+    // Temporarily disable onboarding for testing
+    // setShowOnboarding(true);
 
     // ✅ Inject Tawk.to chat widget
     const s1 = document.createElement('script');

@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom/client';
 import App from './App';
 import './styles.css';
 
-import { WagmiConfig } from 'wagmi';
+import { WagmiProvider } from 'wagmi';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createWeb3Modal, defaultWagmiConfig } from '@web3modal/wagmi/react';
 import { mainnet, sepolia } from 'wagmi/chains';
@@ -59,9 +59,9 @@ ReactDOM.createRoot(rootElement).render(
       options={options}
     >
       <QueryClientProvider client={queryClient}>
-        <WagmiConfig config={wagmiConfig}>
+        <WagmiProvider config={wagmiConfig}>
           <App />
-        </WagmiConfig>
+        </WagmiProvider>
       </QueryClientProvider>
     </PostHogProvider>
   </React.StrictMode>
