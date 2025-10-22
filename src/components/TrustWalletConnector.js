@@ -5,7 +5,7 @@ import { isMobile, getTrustWalletStoreUrl } from '../utils/mobileUtils';
 
 const projectId = '536c04f6d8471f0b4af9cfa72213eed7';
 
-const TrustWalletConnector = ({ onConnect, onDisconnect }) => {
+const TrustWalletConnectorComponent = ({ onConnect, onDisconnect }) => {
   const [isMobileDevice, setIsMobileDevice] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
   const modal = useWeb3Modal();
@@ -40,18 +40,25 @@ const TrustWalletConnector = ({ onConnect, onDisconnect }) => {
         showQrModal: false, // Don't show QR modal
       });
 
-      // Enable the provider to get the URI
-      await provider.enable();
+      // Start enable process (async)
+      const enablePromise = provider.enable();
 
-      // Get the WalletConnect URI
-      const uri = provider.signer?.uri;
+      // Immediately try to get the URI (it should be available quickly)
+      let uri = provider.signer?.uri;
+
+      // If not available yet, wait a short time
+      if (!uri) {
+        await new Promise(resolve => setTimeout(resolve, 50));
+        uri = provider.signer?.uri;
+      }
 
       if (uri) {
-        // Construct Trust Wallet deep link
+        // Trigger deep link synchronously as soon as URI is available
         const deepLink = `trustwallet://wc?uri=${encodeURIComponent(uri)}`;
-
-        // Attempt to open Trust Wallet
         window.location.href = deepLink;
+
+        // Wait for enable to complete
+        await enablePromise;
 
         // Set timeout to check if app opened
         const timeout = setTimeout(() => {
@@ -85,7 +92,7 @@ const TrustWalletConnector = ({ onConnect, onDisconnect }) => {
 
         document.addEventListener('visibilitychange', handleVisibilityChange);
       } else {
-        // No URI available, fallback to store
+        // URI not available, fallback to store
         const storeUrl = getTrustWalletStoreUrl();
         if (storeUrl) {
           window.location.href = storeUrl;
@@ -121,4 +128,4 @@ const TrustWalletConnector = ({ onConnect, onDisconnect }) => {
   );
 };
 
-export default TrustWalletConnector;
+export default TrustWalletConnectorComponent;
