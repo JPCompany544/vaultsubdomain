@@ -1,6 +1,10 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
+interface OnboardingModalProps {
+  onComplete: () => void;
+}
+
 const slides = [
   {
     title: 'Welcome to Trust Loan Companion',
@@ -39,8 +43,8 @@ const slides = [
 ];
 
 
-const OnboardingModal = ({ onComplete }) => {
-  const [currentSlide, setCurrentSlide] = useState(0);
+const OnboardingModal: React.FC<OnboardingModalProps> = ({ onComplete }) => {
+  const [currentSlide, setCurrentSlide] = useState<number>(0);
 
   const nextSlide = () => {
     if (currentSlide < slides.length - 1) {

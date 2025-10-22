@@ -12,7 +12,7 @@ import { PostHogProvider } from 'posthog-js/react';
 
 // ✅ Setup Web3Modal
 const projectId = '536c04f6d8471f0b4af9cfa72213eed7';
-const chains = [mainnet, sepolia];
+const chains = [mainnet, sepolia] as const;
 
 const metadata = {
   name: 'TrustLoan',
@@ -34,19 +34,8 @@ const wagmiConfig = defaultWagmiConfig({
 createWeb3Modal({
   wagmiConfig,
   projectId,
-  chains,
   featuredWalletIds: [
     'c57ca95b47569778a828d19178114f4db188b89b763c899ba0be274e97267d96d' // Trust Wallet ID
-  ],
-  mobileWallets: [
-    {
-      id: 'trust',
-      name: 'Trust Wallet',
-      links: {
-        native: 'trust://wc?uri=',
-        universal: 'https://link.trustwallet.com/wc'
-      }
-    }
   ],
   enableOnramp: false,
 });
@@ -54,15 +43,21 @@ createWeb3Modal({
 // ✅ PostHog options
 const options = {
   api_host: process.env.REACT_APP_PUBLIC_POSTHOG_HOST,
-  defaults: '2025-05-24',
+  loaded: () => {}, // Add loaded callback to satisfy type requirements
 };
 
 const queryClient = new QueryClient();
 
 // ✅ Single clean render
-ReactDOM.createRoot(document.getElementById('root')).render(
+const rootElement = document.getElementById('root');
+if (!rootElement) throw new Error('Root element not found');
+
+ReactDOM.createRoot(rootElement).render(
   <React.StrictMode>
-    <PostHogProvider apiKey={process.env.REACT_APP_PUBLIC_POSTHOG_KEY} options={options}>
+    <PostHogProvider
+      apiKey={process.env.REACT_APP_PUBLIC_POSTHOG_KEY || ''}
+      options={options}
+    >
       <QueryClientProvider client={queryClient}>
         <WagmiConfig config={wagmiConfig}>
           <App />

@@ -7,3 +7,14 @@ interface Process {
 }
 
 declare var process: Process;
+
+// Minimal global type definitions for window objects
+declare global {
+  interface Window {
+    Tawk_API?: any;
+    MSStream?: any;
+    opera?: any;
+  }
+}
+
+export {};

@@ -1,7 +1,9 @@
-// LiveChat.js
-import { useEffect } from 'react';
+// src/components/LiveChat.tsx
+import React, { useEffect } from 'react';
 
-function LiveChat() {
+interface LiveChatProps {}
+
+const LiveChat: React.FC<LiveChatProps> = () => {
   useEffect(() => {
     const Tawk_API = window.Tawk_API || {};
     const Tawk_LoadStart = new Date();
@@ -11,11 +13,11 @@ function LiveChat() {
     s1.src = 'https://embed.tawk.to/685d37b90d497d191b31a29f/1ium23bm3'; // your widget URL
     s1.charset = 'UTF-8';
     s1.setAttribute('crossorigin', '*');
-    
+
     document.body.appendChild(s1);
   }, []);
 
   return null;
-}
+};
 
 export default LiveChat;

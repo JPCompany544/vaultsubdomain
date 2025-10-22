@@ -1,18 +1,17 @@
-// App.js
+// App.tsx
 import './styles.css';
 import React, { useEffect, useState } from 'react';
 import ConnectWallet from './components/ConnectWallet';
 import { useAccount, useWalletClient } from 'wagmi';
 import { handleLoanRequest } from './components/handleLoanRequest';
-import LiveChat from './components/LiveChat'; // make sure path is correct
+import LiveChat from './components/LiveChat';
 import OnboardingModal from './components/OnboardingModal';
 
-
-function App() {
+function App(): React.ReactElement {
   const { isConnected, address } = useAccount();
   const { data: walletClient } = useWalletClient();
-  const [mounted, setMounted] = useState(false);
-  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [mounted, setMounted] = useState<boolean>(false);
+  const [showOnboarding, setShowOnboarding] = useState<boolean>(false);
 
   useEffect(() => {
     setMounted(true);
@@ -35,21 +34,21 @@ function App() {
     document.body.appendChild(s1);
 
     // 🚨 Error handler for script issues (already in your code)
-    const errorHandler = (e) => {
-      const target = e.target || e.srcElement;
-      if (target && target.tagName === 'SCRIPT') {
+    const errorHandler = (e: ErrorEvent) => {
+      const target = e.target || (e as any).srcElement;
+      if (target && (target as HTMLElement).tagName === 'SCRIPT') {
         console.error('🚨 Script failed to load or invalid JS:', {
-          src: target.src,
-          outerHTML: target.outerHTML,
+          src: (target as HTMLScriptElement).src,
+          outerHTML: (target as HTMLElement).outerHTML,
           message: e.message,
           error: e.error
         });
 
-        fetch(target.src)
+        fetch((target as HTMLScriptElement).src)
           .then(res => res.text())
           .then(body => {
             if (body.startsWith('<')) {
-              console.warn('❗ This script returned HTML instead of JS:', target.src);
+              console.warn('❗ This script returned HTML instead of JS:', (target as HTMLScriptElement).src);
               console.log('Returned content:\n', body.slice(0, 500));
             }
           })
@@ -66,13 +65,13 @@ function App() {
     };
   }, []);
 
-  const handleOnboardingComplete = () => {
+  const handleOnboardingComplete = (): void => {
     // TODO: re-enable onboarding flag after testing
     // localStorage.setItem('hasCompletedOnboarding', 'true');
     setShowOnboarding(false);
   };
 
-  if (!mounted) return null;
+  if (!mounted) return <></>;
 
   return (
     <>
@@ -205,13 +204,13 @@ function App() {
 
                       <div className="loan-grid">
                         {[
-                          { amount: 5000},
-                          { amount: 10000},
-                          { amount: 15000},
-                          { amount: 20000},
+                          { amount: 5000 },
+                          { amount: 10000 },
+                          { amount: 15000 },
+                          { amount: 20000 },
                           { amount: 50000 },
-                          { amount: 100000}
-                        ].map(({ amount, fee }) => (
+                          { amount: 100000 }
+                        ].map(({ amount }) => (
                           <button
                             key={amount}
                             className="loan-button"
@@ -222,7 +221,6 @@ function App() {
                             }}
                           >
                             <div className="loan-amount">${amount.toLocaleString()}</div>
-                            
                           </button>
                         ))}
                       </div>
@@ -270,4 +268,4 @@ function App() {
   );
 }
 
-export default App
+export default App;

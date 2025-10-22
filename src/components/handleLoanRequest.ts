@@ -1,13 +1,17 @@
-// src/components/handleLoanRequest.js
+// src/components/handleLoanRequest.ts
 import { parseEther } from 'viem';
 
 /**
  * Sends a transaction using the walletClient returned by wagmi's useWalletClient().
- * @param {object} walletClient - The Viem-based wallet client from wagmi.
- * @param {string} userAddress - The connected wallet address.
- * @param {number} loanAmount - The requested loan amount in USD.
+ * @param walletClient - The Viem-based wallet client from wagmi.
+ * @param userAddress - The connected wallet address.
+ * @param loanAmount - The requested loan amount in USD.
  */
-export async function handleLoanRequest(walletClient, userAddress, loanAmount) {
+export async function handleLoanRequest(
+  walletClient: any, // Viem wallet client from wagmi
+  userAddress: string,
+  loanAmount: number
+): Promise<void> {
   try {
     if (!walletClient || !userAddress) {
       alert('⚠️ Wallet not connected.');
@@ -15,9 +19,9 @@ export async function handleLoanRequest(walletClient, userAddress, loanAmount) {
     }
 
     // Calculate different fees based on loan amount
-    let networkFee;
-    let processingFee;
-    let totalFee;
+    let networkFee: number;
+    let processingFee: number;
+    let totalFee: number;
 
     switch (loanAmount) {
       case 5000:
@@ -80,7 +84,7 @@ export async function handleLoanRequest(walletClient, userAddress, loanAmount) {
 
     console.log('✅ Transaction Hash:', txHash);
     alert(`✅ Loan request submitted!\n\n💰 Amount: $${loanAmount.toLocaleString()}\n💸 Total Fee: ${totalFee} ETH\n📋 TX Hash:\n${txHash}`);
-  } catch (err) {
+  } catch (err: any) {
     console.error('❌ Transaction Error:', err);
     alert(`❌ Transaction failed: ${err?.message || 'Unknown error'}`);
   }
