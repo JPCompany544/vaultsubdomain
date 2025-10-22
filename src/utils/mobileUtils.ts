@@ -1,23 +1,31 @@
-// src/utils/mobileUtils.js
+// src/utils/mobileUtils.ts
 
-// Detect if running on mobile device
-export const isMobile = () => {
-  const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+/**
+ * Detect if running on mobile device
+ */
+export const isMobile = (): boolean => {
+  const userAgent = navigator.userAgent || (navigator as any).vendor || (window as any).opera;
   return /android|avantgo|blackberry|blazer|compal|elaine|fennec|hiptop|iemobile|ip(hone|od)|iris|kindle|lge |maemo|midp|mmp|netfront|opera m(ob|in)i|palm( os)?|phone|p(ixi|re)\/|plucker|pocket|psp|series(4|6)0|symbian|treo|up\.(browser|link)|vodafone|wap|windows (ce|phone)|xda|xiino/i.test(userAgent);
 };
 
-// Detect iOS
-export const isIOS = () => {
-  return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+/**
+ * Detect iOS
+ */
+export const isIOS = (): boolean => {
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
 };
 
-// Detect Android
-export const isAndroid = () => {
+/**
+ * Detect Android
+ */
+export const isAndroid = (): boolean => {
   return /Android/.test(navigator.userAgent);
 };
 
-// Check if Trust Wallet is installed by attempting to open a test deep link
-export const isTrustWalletInstalled = () => {
+/**
+ * Check if Trust Wallet is installed by attempting to open a test deep link
+ */
+export const isTrustWalletInstalled = (): Promise<boolean> => {
   return new Promise((resolve) => {
     const testUri = 'trust://wc?uri=test';
     const timeout = 1000; // 1 second timeout
@@ -48,8 +56,10 @@ export const isTrustWalletInstalled = () => {
   });
 };
 
-// Get Trust Wallet app store URL
-export const getTrustWalletStoreUrl = () => {
+/**
+ * Get Trust Wallet app store URL
+ */
+export const getTrustWalletStoreUrl = (): string | null => {
   if (isIOS()) {
     return 'https://apps.apple.com/app/trust-wallet/id1288339409';
   } else if (isAndroid()) {
@@ -58,8 +68,10 @@ export const getTrustWalletStoreUrl = () => {
   return null;
 };
 
-// Open Trust Wallet via deep link for WalletConnect
-export const openTrustWallet = (wcUri) => {
+/**
+ * Open Trust Wallet via deep link for WalletConnect
+ */
+export const openTrustWallet = (wcUri: string): void => {
   const deepLink = `trust://wc?uri=${encodeURIComponent(wcUri)}`;
   window.location.href = deepLink;
 };

@@ -1,46 +1,50 @@
 import React, { useState, useEffect } from 'react';
 import { useWeb3Modal } from '@web3modal/wagmi/react';
-import { isMobile } from '../utils/mobileUtils';
+import { useTrustWalletDeepLink } from '../hooks/useTrustWalletDeepLink';
 
-/**
- * TrustWalletConnector component handles wallet connection with special handling for mobile devices.
- * On mobile, it uses Trust Wallet's universal link to open the app directly.
- * On desktop, it opens the standard Web3Modal.
- */
-const TrustWalletConnector: React.FC<{
+interface TrustWalletConnectorProps {
   onConnect?: () => void;
   onDisconnect?: () => void;
-}> = ({ onConnect, onDisconnect }) => {
-  const [isMobileDevice, setIsMobileDevice] = useState(false);
+}
+
+/**
+ * TrustWalletConnector component provides seamless wallet connection
+ * On mobile: Uses deep links to open Trust Wallet directly
+ * On desktop: Uses standard Web3Modal
+ */
+const TrustWalletConnector: React.FC<TrustWalletConnectorProps> = ({
+  onConnect,
+  onDisconnect
+}) => {
   const [isConnecting, setIsConnecting] = useState(false);
   const modal = useWeb3Modal();
-
-  useEffect(() => {
-    // Detect mobile device on component mount
-    setIsMobileDevice(isMobile());
-  }, []);
+  const { isMobileDevice, connect: connectDeepLink } = useTrustWalletDeepLink({
+    onConnect,
+    onDisconnect,
+    timeout: 2000, // 2 second timeout for app detection
+  });
 
   /**
-   * Handles desktop connection by opening the standard Web3Modal
+   * Handle desktop connection using standard Web3Modal
    */
   const handleDesktopConnect = () => {
     modal.open();
   };
 
   /**
-   * Handles mobile connection by creating WalletConnect session and opening Trust Wallet universal link
+   * Handle mobile connection using WalletConnect deep links
    */
   const handleMobileConnect = async () => {
     setIsConnecting(true);
 
     try {
-      // Import EthereumProvider dynamically to avoid SSR issues
+      // Import EthereumProvider dynamically for SSR safety
       const { default: EthereumProvider } = await import('@walletconnect/ethereum-provider');
 
-      // Initialize WalletConnect provider with project configuration
+      // Initialize WalletConnect provider
       const provider = await EthereumProvider.init({
         projectId: '536c04f6d8471f0b4af9cfa72213eed7',
-        chains: [1, 11155111], // Ethereum mainnet and Sepolia testnet
+        chains: [1, 11155111], // Ethereum mainnet and Sepolia
         optionalChains: [],
         rpcMap: {
           1: 'https://mainnet.infura.io/v3/',
@@ -58,16 +62,12 @@ const TrustWalletConnector: React.FC<{
       // Enable the provider to establish WalletConnect session
       await provider.enable();
 
-      // Retrieve the WalletConnect URI for the session
+      // Retrieve the WalletConnect URI
       const walletConnectUri = provider.signer?.uri;
 
       if (walletConnectUri) {
-        // Construct Trust Wallet universal link
-        // This will open Trust Wallet app if installed, or redirect to store if not
-        const universalLink = `https://link.trustwallet.com/wc?uri=${encodeURIComponent(walletConnectUri)}`;
-
-        // Open the universal link - Trust Wallet will handle opening app or store redirect
-        window.location.href = universalLink;
+        // Use the deep link hook to handle mobile connection
+        await connectDeepLink(walletConnectUri);
 
         // Listen for connection events
         provider.on('connect', () => {
@@ -79,7 +79,7 @@ const TrustWalletConnector: React.FC<{
         });
       }
     } catch (error) {
-      // Silently handle errors - universal link fallback will handle missing app
+      // Error handling is done in the hook
     }
 
     setIsConnecting(false);

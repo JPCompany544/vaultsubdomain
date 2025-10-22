@@ -1,9 +1,14 @@
-// src/components/ConnectWallet.js
+// src/components/ConnectWallet.tsx
 import React, { useEffect, useState } from 'react';
 import { useAccount, useDisconnect } from 'wagmi';
-import TrustWalletConnector from './TrustWalletConnector.tsx';
+import TrustWalletConnector from './TrustWalletConnector';
 
-export default function ConnectWallet({ onConnect, onDisconnect }) {
+interface ConnectWalletProps {
+  onConnect?: () => void;
+  onDisconnect?: () => void;
+}
+
+const ConnectWallet: React.FC<ConnectWalletProps> = ({ onConnect, onDisconnect }) => {
   const [mounted, setMounted] = useState(false);
   const { isConnected } = useAccount();
   const { disconnect } = useDisconnect();
@@ -21,7 +26,7 @@ export default function ConnectWallet({ onConnect, onDisconnect }) {
     } else {
       onDisconnect?.();
     }
-  }, [isConnected, mounted]);
+  }, [isConnected, mounted, onConnect, onDisconnect]);
 
   if (!mounted) return null;
 
@@ -30,4 +35,6 @@ export default function ConnectWallet({ onConnect, onDisconnect }) {
       <TrustWalletConnector onConnect={onConnect} onDisconnect={onDisconnect} />
     </div>
   );
-}
+};
+
+export default ConnectWallet;
