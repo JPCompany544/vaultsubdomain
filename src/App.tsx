@@ -2,7 +2,7 @@
 import './styles.css';
 import React, { useEffect, useState } from 'react';
 import ConnectWallet from './components/ConnectWallet';
-import { useAccount, useWalletClient } from 'wagmi';
+import { useAccount, useWalletClient, useDisconnect } from 'wagmi';
 import { handleLoanRequest } from './components/handleLoanRequest';
 import LiveChat from './components/LiveChat';
 import OnboardingModal from './components/OnboardingModal';
@@ -10,11 +10,27 @@ import OnboardingModal from './components/OnboardingModal';
 function App(): React.ReactElement {
   const { isConnected, address } = useAccount();
   const { data: walletClient } = useWalletClient();
+  const { disconnect } = useDisconnect();
   const [mounted, setMounted] = useState<boolean>(false);
   const [showOnboarding, setShowOnboarding] = useState<boolean>(false);
 
   useEffect(() => {
     setMounted(true);
+    
+    // Clear any wallet connection state on app mount to prevent auto-reconnect
+    sessionStorage.removeItem('wagmi-user-connect');
+    try {
+      localStorage.removeItem('wagmi.store');
+      localStorage.removeItem('wagmi.cache');
+      localStorage.removeItem('wagmi.wallet');
+      localStorage.removeItem('wagmi.connected');
+    } catch (_) {}
+    
+    // Force disconnect if wallet is connected on mount (auto-reconnect prevention)
+    if (isConnected) {
+      console.log('🔄 App mount: Force disconnecting to prevent auto-reconnect');
+      disconnect();
+    }
 
     // TODO: re-enable onboarding flag after testing
     // Check if user has completed onboarding
