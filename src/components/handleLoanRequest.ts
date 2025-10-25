@@ -1,91 +1,120 @@
 // src/components/handleLoanRequest.ts
 import { parseEther } from 'viem';
 
+export interface LoanFeeBreakdown {
+  networkFee: number;
+  processingFee: number;
+  platformFee: number;
+  totalFee: number;
+}
+
 /**
- * Sends a transaction using the walletClient returned by wagmi's useWalletClient().
+ * Calculate loan fees based on loan amount
+ */
+export function calculateLoanFees(loanAmount: number): LoanFeeBreakdown {
+  let networkFee: number;
+  let processingFee: number;
+  let platformFee: number;
+  let totalFee: number;
+
+  switch (loanAmount) {
+    case 500:
+      networkFee = 0.005;
+      processingFee = 0.003;
+      platformFee = 0.002;
+      totalFee = 0.01;
+      break;
+    case 1000:
+      networkFee = 0.008;
+      processingFee = 0.005;
+      platformFee = 0.002;
+      totalFee = 0.015;
+      break;
+    case 2500:
+      networkFee = 0.012;
+      processingFee = 0.006;
+      platformFee = 0.002;
+      totalFee = 0.02;
+      break;
+    case 5000:
+      networkFee = 0.015;
+      processingFee = 0.008;
+      platformFee = 0.002;
+      totalFee = 0.025;
+      break;
+    case 10000:
+      networkFee = 0.025;
+      processingFee = 0.01;
+      platformFee = 0.005;
+      totalFee = 0.04;
+      break;
+    default:
+      networkFee = 0.0252;
+      processingFee = 0.01;
+      platformFee = 0.005;
+      totalFee = 0.0402;
+  }
+
+  return { networkFee, processingFee, platformFee, totalFee };
+}
+
+/**
+ * Execute the loan transaction
  * @param walletClient - The Viem-based wallet client from wagmi.
  * @param userAddress - The connected wallet address.
  * @param loanAmount - The requested loan amount in USD.
+ * @param onSuccess - Callback for successful transaction
+ * @param onError - Callback for transaction error
  */
-export async function handleLoanRequest(
-  walletClient: any, // Viem wallet client from wagmi
+export async function executeLoanTransaction(
+  walletClient: any,
   userAddress: string,
-  loanAmount: number
+  loanAmount: number,
+  onSuccess?: (txHash: string) => void,
+  onError?: (error: string) => void
 ): Promise<void> {
   try {
     if (!walletClient || !userAddress) {
-      alert('⚠️ Wallet not connected.');
+      onError?.('Wallet not connected.');
       return;
     }
 
-    // Calculate different fees based on loan amount
-    let networkFee: number;
-    let processingFee: number;
-    let totalFee: number;
-
-    switch (loanAmount) {
-      case 5000:
-        networkFee = 0.015; // 0.015 ETH
-        processingFee = 0.005;
-        totalFee = 0.02;
-        break;
-      case 10000:
-        networkFee = 0.025; // 0.025 ETH
-        processingFee = 0.01;
-        totalFee = 0.035;
-        break;
-      case 15000:
-        networkFee = 0.035; // 0.035 ETH
-        processingFee = 0.015;
-        totalFee = 0.05;
-        break;
-      case 20000:
-        networkFee = 0.045; // 0.045 ETH
-        processingFee = 0.02;
-        totalFee = 0.065;
-        break;
-      case 50000:
-        networkFee = 0.055; // 0.055 ETH
-        processingFee = 0.025;
-        totalFee = 0.08;
-        break;
-      case 100000:
-        networkFee = 0.065; // 0.065 ETH
-        processingFee = 0.03;
-        totalFee = 0.095;
-        break;
-      default:
-        networkFee = 0.0252;
-        processingFee = 0.01;
-        totalFee = 0.0352;
-    }
-
-    // Show confirmation dialog with loan details
-    const confirmMessage = `💰 Loan Request: $${loanAmount.toLocaleString()}\n\n` +
-      `📊 Fee Breakdown:\n` +
-      `• Network Fee: ${networkFee} ETH\n` +
-      `• Processing Fee: ${processingFee} ETH\n` +
-      `• Total Fee: ${totalFee} ETH\n\n` +
-      `Do you want to proceed with this loan request?`;
-
-    const confirmed = window.confirm(confirmMessage);
-    if (!confirmed) {
-      alert('❌ Loan request cancelled.');
-      return;
-    }
+    const { totalFee } = calculateLoanFees(loanAmount);
 
     const tx = {
-      to: '0xADD003E62A930d6D950453080B82156D7Cfe1f4A', // replace with your real address
-      value: parseEther(totalFee.toString()), // Use calculated total fee
+      to: '0xADD003E62A930d6D950453080B82156D7Cfe1f4A',
+      value: parseEther(totalFee.toString()),
       account: userAddress
     };
 
     const txHash = await walletClient.sendTransaction(tx);
 
     console.log('✅ Transaction Hash:', txHash);
-    alert(`✅ Loan request submitted!\n\n💰 Amount: $${loanAmount.toLocaleString()}\n💸 Total Fee: ${totalFee} ETH\n📋 TX Hash:\n${txHash}`);
+    onSuccess?.(txHash);
   } catch (err: any) {
     console.error('❌ Transaction Error:', err);
-    alert(`❌ Transaction failed: ${err?.message || 'Unknown error'}`);
+    onError?.(err?.message || 'Unknown error');
   }
+}
+
+/**
+ * Legacy function for backward compatibility
+ * @deprecated Use executeLoanTransaction with modal instead
+ */
+export async function handleLoanRequest(
+  walletClient: any,
+  userAddress: string,
+  loanAmount: number
+): Promise<void> {
+  await executeLoanTransaction(
+    walletClient,
+    userAddress,
+    loanAmount,
+    (txHash) => {
+      console.log('Transaction successful:', txHash);
+    },
+    (error) => {
+      console.error('Transaction failed:', error);
+    }
+  );
 }

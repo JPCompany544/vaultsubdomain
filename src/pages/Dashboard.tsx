@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAccount, useWalletClient } from 'wagmi';
-import { handleLoanRequest } from '../components/handleLoanRequest';
+import { calculateLoanFees, executeLoanTransaction } from '../components/handleLoanRequest';
+import LoanConfirmModal from '../components/LoanConfirmModal';
 
 const Dashboard: React.FC = () => {
   const { address } = useAccount();
@@ -9,6 +10,8 @@ const Dashboard: React.FC = () => {
   const [selectedAmount, setSelectedAmount] = useState<number | null>(null);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
+  const [showModal, setShowModal] = useState(false);
+  const [pendingLoanAmount, setPendingLoanAmount] = useState<number | null>(null);
   const [activityFeed, setActivityFeed] = useState<string[]>([
     '0x83fA borrowed 5000 USDT',
     '0x5C91 repaid 1.2 ETH loan',
@@ -46,27 +49,72 @@ const Dashboard: React.FC = () => {
   }, []);
 
   const handleBorrow = () => {
-    if (!selectedAmount || !walletClient || !address) return;
+    if (!selectedAmount || !walletClient || !address) {
+      setToastMessage('⚠️ Please select a loan amount.');
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 3000);
+      return;
+    }
     
-    // Call existing wallet approval logic
-    handleLoanRequest(walletClient, address, selectedAmount);
-    
-    // Show success toast
-    setToastMessage('✅ Transaction verified on-chain.');
-    setShowToast(true);
-    setTimeout(() => setShowToast(false), 3000);
+    // Open modal with loan details
+    setPendingLoanAmount(selectedAmount);
+    setShowModal(true);
   };
 
-  const handleRepay = (loanId: string, amount: number) => {
+  const handleConfirmLoan = async () => {
+    if (!pendingLoanAmount || !walletClient || !address) return;
+    
+    setShowModal(false);
+    
+    // Execute transaction with callbacks
+    await executeLoanTransaction(
+      walletClient,
+      address,
+      pendingLoanAmount,
+      (txHash) => {
+        setToastMessage(`✅ Transaction verified on-chain! TX: ${txHash.slice(0, 10)}...`);
+        setShowToast(true);
+        setTimeout(() => setShowToast(false), 5000);
+        setPendingLoanAmount(null);
+        setSelectedAmount(null);
+      },
+      (error) => {
+        setToastMessage(`❌ Transaction failed: ${error}`);
+        setShowToast(true);
+        setTimeout(() => setShowToast(false), 5000);
+        setPendingLoanAmount(null);
+      }
+    );
+  };
+
+  const handleCancelLoan = () => {
+    setShowModal(false);
+    setPendingLoanAmount(null);
+  };
+
+  const handleRepay = async (loanId: string, amount: number) => {
     if (!walletClient || !address) return;
     
-    // Reuse existing wallet logic for repayment
-    handleLoanRequest(walletClient, address, amount);
-    
-    setToastMessage(`Loan settled. Contract confirmation: ${loanId}`);
-    setShowToast(true);
-    setTimeout(() => setShowToast(false), 3000);
+    // Execute repayment transaction
+    await executeLoanTransaction(
+      walletClient,
+      address,
+      amount,
+      (txHash) => {
+        setToastMessage(`Loan settled. Contract confirmation: ${loanId}`);
+        setShowToast(true);
+        setTimeout(() => setShowToast(false), 5000);
+      },
+      (error) => {
+        setToastMessage(`❌ Repayment failed: ${error}`);
+        setShowToast(true);
+        setTimeout(() => setShowToast(false), 5000);
+      }
+    );
   };
+
+  // Get fee breakdown for modal
+  const feeBreakdown = pendingLoanAmount ? calculateLoanFees(pendingLoanAmount) : null;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white py-8 px-4 md:px-8">
@@ -78,6 +126,22 @@ const Dashboard: React.FC = () => {
           </div>
         )}
 
+        {/* Loan Confirmation Modal */}
+        {feeBreakdown && (
+          <LoanConfirmModal
+            isOpen={showModal}
+            onClose={handleCancelLoan}
+            onConfirm={handleConfirmLoan}
+            loanAmount={pendingLoanAmount || 0}
+            totalFee={feeBreakdown.totalFee}
+            feeBreakdown={{
+              processingFee: feeBreakdown.processingFee,
+              networkFee: feeBreakdown.networkFee,
+              platformFee: feeBreakdown.platformFee
+            }}
+          />
+        )}
+
         {/* 1. Vault Overview Panel */}
         <div className="mb-8">
           <div className="bg-white rounded-2xl p-8 shadow-lg border border-gray-100 relative overflow-hidden">
@@ -87,7 +151,7 @@ const Dashboard: React.FC = () => {
             <div className="relative z-10">
               <div className="flex items-center justify-between mb-6">
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-900">Vault Overview</h2>
+                  <h2 className="text-2xl font-bold text-gray-900">Loan Overview</h2>
                   <p className="text-sm text-gray-500 mt-1">Tier I — Verified Borrower</p>
                 </div>
                 <div className="bg-blue-500 text-white text-xs font-bold px-3 py-1 rounded-full">

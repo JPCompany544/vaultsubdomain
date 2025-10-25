@@ -56,12 +56,16 @@ const AppContent: React.FC = () => {
     // setShowOnboarding(true);
 
     // ✅ Inject Tawk.to chat widget
+    (window as any).Tawk_API = (window as any).Tawk_API || {};
+    (window as any).Tawk_LoadStart = new Date();
+    
     const s1 = document.createElement('script');
+    const s0 = document.getElementsByTagName('script')[0];
     s1.async = true;
-    s1.src = 'https://embed.tawk.to/685d37b90d497d191b31a29f/1ium23bm3'; // Your real widget link
+    s1.src = 'https://embed.tawk.to/68fc787cdea144195f593cdb/1j8d3dafo';
     s1.charset = 'UTF-8';
     s1.setAttribute('crossorigin', '*');
-    document.body.appendChild(s1);
+    s0.parentNode?.insertBefore(s1, s0);
 
     // 🚨 Error handler for script issues (already in your code)
     const errorHandler = (e: ErrorEvent) => {
