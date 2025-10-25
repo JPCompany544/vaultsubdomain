@@ -32,68 +32,68 @@ const LoanConfirmModal: React.FC<LoanConfirmModalProps> = ({
       />
       
       {/* Modal */}
-      <div className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full border-2 border-[#3375BB]/20 animate-scale-in">
+      <div className="relative bg-white rounded-2xl shadow-2xl max-w-md md:w-full w-[90%] max-w-sm md:max-w-md border-2 border-[#3375BB]/20 animate-scale-in">
         {/* Header */}
-        <div className="bg-gradient-to-r from-[#3375BB] to-blue-600 text-white px-6 py-4 rounded-t-2xl">
-          <h3 className="text-xl font-bold">Loan Request Confirmation</h3>
-          <p className="text-sm text-blue-100 mt-1">Review details before proceeding</p>
+        <div className="bg-gradient-to-r from-[#3375BB] to-blue-600 text-white px-4 md:px-6 py-3 md:py-4 rounded-t-2xl">
+          <h3 className="text-lg md:text-xl font-bold">Loan Request Confirmation</h3>
+          <p className="text-xs md:text-sm text-blue-100 mt-1">Review details before proceeding</p>
         </div>
 
         {/* Content */}
-        <div className="p-6 space-y-6">
+        <div className="p-4 md:p-6 space-y-4 md:space-y-6">
           {/* Loan Amount */}
-          <div className="bg-blue-50 rounded-xl p-4 border border-blue-100">
-            <p className="text-sm text-gray-600 mb-1">Loan Amount</p>
-            <p className="text-3xl font-bold text-gray-900">${loanAmount.toLocaleString()}</p>
+          <div className="bg-blue-50 rounded-xl p-3 md:p-4 border border-blue-100">
+            <p className="text-xs md:text-sm text-gray-600 mb-1">Loan Amount</p>
+            <p className="text-2xl md:text-3xl font-bold text-gray-900">${loanAmount.toLocaleString()}</p>
           </div>
 
           {/* Fee Breakdown */}
           <div>
-            <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+            <h4 className="text-sm md:text-base font-semibold text-gray-900 mb-2 md:mb-3 flex items-center gap-2">
               <span className="text-[#3375BB]">💰</span>
               Fee Breakdown
             </h4>
-            <div className="space-y-2 bg-gray-50 rounded-xl p-4">
-              <div className="flex justify-between text-sm">
+            <div className="space-y-2 bg-gray-50 rounded-xl p-3 md:p-4">
+              <div className="flex justify-between text-xs md:text-sm">
                 <span className="text-gray-600">Processing Fee</span>
                 <span className="font-semibold text-gray-900">{feeBreakdown.processingFee} ETH</span>
               </div>
-              <div className="flex justify-between text-sm">
+              <div className="flex justify-between text-xs md:text-sm">
                 <span className="text-gray-600">Network Fee</span>
                 <span className="font-semibold text-gray-900">{feeBreakdown.networkFee} ETH</span>
               </div>
-              <div className="flex justify-between text-sm">
+              <div className="flex justify-between text-xs md:text-sm">
                 <span className="text-gray-600">Platform Fee</span>
                 <span className="font-semibold text-gray-900">{feeBreakdown.platformFee} ETH</span>
               </div>
               <div className="border-t border-gray-300 pt-2 mt-2">
                 <div className="flex justify-between">
-                  <span className="font-bold text-gray-900">Total Fee</span>
-                  <span className="font-bold text-[#3375BB] text-lg">{totalFee} ETH</span>
+                  <span className="text-sm md:text-base font-bold text-gray-900">Total Fee</span>
+                  <span className="text-base md:text-lg font-bold text-[#3375BB]">{totalFee} ETH</span>
                 </div>
               </div>
             </div>
           </div>
 
           {/* Warning */}
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-            <p className="text-xs text-yellow-800">
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-2 md:p-3">
+            <p className="text-[10px] md:text-xs text-yellow-800">
               ⚠️ This transaction will be processed on-chain. Please ensure you have sufficient ETH for gas fees.
             </p>
           </div>
         </div>
 
         {/* Actions */}
-        <div className="px-6 pb-6 flex gap-3">
+        <div className="px-4 md:px-6 pb-4 md:pb-6 flex gap-2 md:gap-3">
           <button
             onClick={onClose}
-            className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-3 rounded-xl transition-colors"
+            className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-2.5 md:py-3 rounded-xl transition-colors text-sm md:text-base"
           >
             Cancel
           </button>
           <button
             onClick={onConfirm}
-            className="flex-1 bg-gradient-to-r from-[#3375BB] to-blue-600 hover:shadow-lg text-white font-bold py-3 rounded-xl transition-all"
+            className="flex-1 bg-gradient-to-r from-[#3375BB] to-blue-600 hover:shadow-lg text-white font-bold py-2.5 md:py-3 rounded-xl transition-all text-sm md:text-base"
           >
             Confirm in Wallet
           </button>

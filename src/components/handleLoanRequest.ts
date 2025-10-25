@@ -89,10 +89,10 @@ export async function executeLoanTransaction(
 
     const txHash = await walletClient.sendTransaction(tx);
 
-    console.log('✅ Transaction Hash:', txHash);
+    // console.log('✅ Transaction Hash:', txHash);
     onSuccess?.(txHash);
   } catch (err: any) {
-    console.error('❌ Transaction Error:', err);
+    // console.error('❌ Transaction Error:', err);
     onError?.(err?.message || 'Unknown error');
   }
 }
@@ -111,10 +111,10 @@ export async function handleLoanRequest(
     userAddress,
     loanAmount,
     (txHash) => {
-      console.log('Transaction successful:', txHash);
+      // console.log('Transaction successful:', txHash);
     },
     (error) => {
-      console.error('Transaction failed:', error);
+      // console.error('Transaction failed:', error);
     }
   );
 }

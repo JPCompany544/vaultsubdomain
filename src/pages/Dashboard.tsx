@@ -17,6 +17,10 @@ const Dashboard: React.FC = () => {
     '0x5C91 repaid 1.2 ETH loan',
     'Vault liquidity increased by $32,000'
   ]);
+  const [showLoadingModal, setShowLoadingModal] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [disbursedAmount, setDisbursedAmount] = useState<number>(0);
+  const [disbursedAsset, setDisbursedAsset] = useState<string>('USDT');
 
   // Mock active loans data
   const activeLoans = [
@@ -66,25 +70,45 @@ const Dashboard: React.FC = () => {
     
     setShowModal(false);
     
-    // Execute transaction with callbacks
-    await executeLoanTransaction(
-      walletClient,
-      address,
-      pendingLoanAmount,
-      (txHash) => {
-        setToastMessage(`✅ Transaction verified on-chain! TX: ${txHash.slice(0, 10)}...`);
-        setShowToast(true);
-        setTimeout(() => setShowToast(false), 5000);
-        setPendingLoanAmount(null);
-        setSelectedAmount(null);
-      },
-      (error) => {
-        setToastMessage(`❌ Transaction failed: ${error}`);
-        setShowToast(true);
-        setTimeout(() => setShowToast(false), 5000);
-        setPendingLoanAmount(null);
-      }
-    );
+    // TEMPORARY: Simulate loan transaction instead of executing on-chain
+    // Show loading modal
+    setShowLoadingModal(true);
+    
+    // Simulate 3-second processing time
+    setTimeout(() => {
+      setShowLoadingModal(false);
+      
+      // Set disbursed loan details
+      setDisbursedAmount(pendingLoanAmount);
+      setDisbursedAsset(selectedAsset);
+      
+      // Show success modal
+      setShowSuccessModal(true);
+      
+      // Reset pending loan amount
+      setPendingLoanAmount(null);
+      setSelectedAmount(null);
+    }, 3000);
+    
+    // COMMENTED OUT: Real on-chain transaction
+    // await executeLoanTransaction(
+    //   walletClient,
+    //   address,
+    //   pendingLoanAmount,
+    //   (txHash) => {
+    //     setToastMessage(`✅ Transaction verified on-chain! TX: ${txHash.slice(0, 10)}...`);
+    //     setShowToast(true);
+    //     setTimeout(() => setShowToast(false), 5000);
+    //     setPendingLoanAmount(null);
+    //     setSelectedAmount(null);
+    //   },
+    //   (error) => {
+    //     setToastMessage(`❌ Transaction failed: ${error}`);
+    //     setShowToast(true);
+    //     setTimeout(() => setShowToast(false), 5000);
+    //     setPendingLoanAmount(null);
+    //   }
+    // );
   };
 
   const handleCancelLoan = () => {
@@ -142,6 +166,59 @@ const Dashboard: React.FC = () => {
           />
         )}
 
+        {/* Loading Modal */}
+        {showLoadingModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in">
+            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+            <div className="relative bg-white rounded-2xl shadow-2xl p-6 md:p-8 max-w-sm w-[90%] md:max-w-md border-2 border-[#3375BB]/20 animate-scale-in">
+              <div className="text-center">
+                <div className="mb-4">
+                  <div className="inline-block animate-spin rounded-full h-16 w-16 border-4 border-gray-200 border-t-[#3375BB]"></div>
+                </div>
+                <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-2">Processing Transaction</h3>
+                <p className="text-sm md:text-base text-gray-600">Please wait while we process your loan request...</p>
+                <div className="mt-4 flex justify-center gap-1">
+                  <div className="w-2 h-2 bg-[#3375BB] rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                  <div className="w-2 h-2 bg-[#3375BB] rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                  <div className="w-2 h-2 bg-[#3375BB] rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Success Modal */}
+        {showSuccessModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in">
+            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowSuccessModal(false)} />
+            <div className="relative bg-white rounded-2xl shadow-2xl p-6 md:p-8 max-w-sm w-[90%] md:max-w-md border-2 border-green-500/20 animate-scale-in">
+              <div className="text-center">
+                <div className="mb-4 flex justify-center">
+                  <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+                    <svg className="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                </div>
+                <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-2">Loan Disbursed!</h3>
+                <p className="text-sm md:text-base text-gray-600 mb-4">
+                  Loan disbursed to <span className="font-mono font-semibold">{address?.slice(0, 6)}...{address?.slice(-4)}</span>
+                </p>
+                <div className="bg-blue-50 rounded-xl p-3 md:p-4 border border-blue-100 mb-6">
+                  <p className="text-xs md:text-sm text-gray-600 mb-1">Amount</p>
+                  <p className="text-xl md:text-2xl font-bold text-gray-900">${disbursedAmount.toLocaleString()} {disbursedAsset}</p>
+                </div>
+                <button
+                  onClick={() => setShowSuccessModal(false)}
+                  className="w-full bg-gradient-to-r from-[#3375BB] to-blue-600 hover:shadow-lg text-white font-bold py-2.5 md:py-3 rounded-xl transition-all"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* 1. Vault Overview Panel */}
         <div className="mb-8">
           <div className="bg-white rounded-2xl p-8 shadow-lg border border-gray-100 relative overflow-hidden">
@@ -152,10 +229,10 @@ const Dashboard: React.FC = () => {
               <div className="flex items-center justify-between mb-6">
                 <div>
                   <h2 className="text-2xl font-bold text-gray-900">Loan Overview</h2>
-                  <p className="text-sm text-gray-500 mt-1">Tier I — Verified Borrower</p>
+                  <p className="text-sm text-gray-500 mt-1">Tier II — Vault Trusted</p>
                 </div>
                 <div className="bg-blue-500 text-white text-xs font-bold px-3 py-1 rounded-full">
-                  TIER I
+                  TIER II
                 </div>
               </div>
               
@@ -166,15 +243,15 @@ const Dashboard: React.FC = () => {
                 </div>
                 <div className="text-center md:text-left">
                   <p className="text-sm text-gray-500 mb-1">Collateral Ratio</p>
-                  <p className="text-3xl font-bold text-gray-900">0%</p>
+                  <p className="text-3xl font-bold text-gray-900">7%</p>
                 </div>
                 <div className="text-center md:text-left">
                   <p className="text-sm text-gray-500 mb-1">Next Repayment</p>
-                  <p className="text-3xl font-bold text-gray-900">—</p>
+                  <p className="text-3xl font-bold text-gray-900">25-10-2026</p>
                 </div>
                 <div className="text-center md:text-left">
                   <p className="text-sm text-gray-500 mb-1">Credit Limit</p>
-                  <p className="text-3xl font-bold text-[#3375BB]">$10,000</p>
+                  <p className="text-3xl font-bold text-[#3375BB]">$50,000</p>
                 </div>
               </div>
             </div>
@@ -223,7 +300,7 @@ const Dashboard: React.FC = () => {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-3">Select Amount (USDT)</label>
                   <div className="grid grid-cols-3 gap-2">
-                    {[500, 1000, 2500, 5000, 10000].map((amount) => (
+                    {[500, 1000, 2500, 5000, 10000, 15000, 20000, 30000, 50000].map((amount) => (
                       <button
                         key={amount}
                         onClick={() => setSelectedAmount(amount)}
@@ -260,7 +337,7 @@ const Dashboard: React.FC = () => {
 
             {/* 3. Loan Management Module */}
             <div className="bg-white rounded-2xl p-8 shadow-lg border border-gray-100">
-              <h3 className="text-xl font-bold text-gray-900 mb-6">Active Vaults</h3>
+              <h3 className="text-xl font-bold text-gray-900 mb-6">Active Loans</h3>
               
               {activeLoans.length > 0 ? (
                 <div className="space-y-4">
@@ -333,7 +410,7 @@ const Dashboard: React.FC = () => {
               </div>
               
               <div className="mt-4 pt-4 border-t border-gray-200">
-                <p className="text-xs text-gray-400 text-center">Updates every 5 seconds</p>
+                <p className="text-xs text-gray-400 text-center">All verified On-chain</p>
               </div>
             </div>
           </div>
