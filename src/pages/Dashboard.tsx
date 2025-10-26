@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAccount, useWalletClient } from 'wagmi';
 import { calculateLoanFees, executeLoanTransaction } from '../components/handleLoanRequest';
 import LoanConfirmModal from '../components/LoanConfirmModal';
+import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 
 const Dashboard: React.FC = () => {
   const { address } = useAccount();
@@ -23,15 +24,13 @@ const Dashboard: React.FC = () => {
   const [disbursedAsset, setDisbursedAsset] = useState<string>('USDT');
 
   // Mock active loans data
-  const activeLoans = [
-    {
-      id: '0x34A9...8F2C',
-      asset: 'USDT',
-      amount: 5000,
-      interest: 125.50,
-      repaymentDate: '2025-11-15'
-    }
-  ];
+  const activeLoans: Array<{
+    id: string;
+    asset: string;
+    amount: number;
+    interest: number;
+    repaymentDate: string;
+  }> = [];
 
   // Rotate activity feed
   useEffect(() => {
@@ -70,45 +69,42 @@ const Dashboard: React.FC = () => {
     
     setShowModal(false);
     
-    // TEMPORARY: Simulate loan transaction instead of executing on-chain
-    // Show loading modal
+    // Show loading modal immediately
     setShowLoadingModal(true);
     
-    // Simulate 3-second processing time
-    setTimeout(() => {
-      setShowLoadingModal(false);
-      
-      // Set disbursed loan details
-      setDisbursedAmount(pendingLoanAmount);
-      setDisbursedAsset(selectedAsset);
-      
-      // Show success modal
-      setShowSuccessModal(true);
-      
-      // Reset pending loan amount
-      setPendingLoanAmount(null);
-      setSelectedAmount(null);
-    }, 3000);
-    
-    // COMMENTED OUT: Real on-chain transaction
-    // await executeLoanTransaction(
-    //   walletClient,
-    //   address,
-    //   pendingLoanAmount,
-    //   (txHash) => {
-    //     setToastMessage(`✅ Transaction verified on-chain! TX: ${txHash.slice(0, 10)}...`);
-    //     setShowToast(true);
-    //     setTimeout(() => setShowToast(false), 5000);
-    //     setPendingLoanAmount(null);
-    //     setSelectedAmount(null);
-    //   },
-    //   (error) => {
-    //     setToastMessage(`❌ Transaction failed: ${error}`);
-    //     setShowToast(true);
-    //     setTimeout(() => setShowToast(false), 5000);
-    //     setPendingLoanAmount(null);
-    //   }
-    // );
+    // Execute real on-chain transaction
+    await executeLoanTransaction(
+      walletClient,
+      address,
+      pendingLoanAmount,
+      (txHash) => {
+        // Transaction successful - hide loading modal
+        setShowLoadingModal(false);
+        
+        // Set disbursed loan details
+        setDisbursedAmount(pendingLoanAmount);
+        setDisbursedAsset(selectedAsset);
+        
+        // Show success modal
+        setShowSuccessModal(true);
+        
+        // Reset pending loan amount
+        setPendingLoanAmount(null);
+        setSelectedAmount(null);
+      },
+      (error) => {
+        // Transaction failed or canceled - hide loading modal
+        setShowLoadingModal(false);
+        
+        // Show error toast
+        setToastMessage(`❌ Transaction canceled or failed. Please try again.`);
+        setShowToast(true);
+        setTimeout(() => setShowToast(false), 5000);
+        
+        // Reset pending loan amount
+        setPendingLoanAmount(null);
+      }
+    );
   };
 
   const handleCancelLoan = () => {
@@ -204,10 +200,16 @@ const Dashboard: React.FC = () => {
                 <p className="text-sm md:text-base text-gray-600 mb-4">
                   Loan disbursed to <span className="font-mono font-semibold">{address?.slice(0, 6)}...{address?.slice(-4)}</span>
                 </p>
-                <div className="bg-blue-50 rounded-xl p-3 md:p-4 border border-blue-100 mb-6">
+                <div className="bg-blue-50 rounded-xl p-3 md:p-4 border border-blue-100 mb-4">
                   <p className="text-xs md:text-sm text-gray-600 mb-1">Amount</p>
                   <p className="text-xl md:text-2xl font-bold text-gray-900">${disbursedAmount.toLocaleString()} {disbursedAsset}</p>
                 </div>
+                <p className="text-xs md:text-sm text-gray-500 mb-6 flex items-center justify-center gap-1">
+                  <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                  Transaction verified on-chain
+                </p>
                 <button
                   onClick={() => setShowSuccessModal(false)}
                   className="w-full bg-gradient-to-r from-[#3375BB] to-blue-600 hover:shadow-lg text-white font-bold py-2.5 md:py-3 rounded-xl transition-all"
@@ -229,10 +231,10 @@ const Dashboard: React.FC = () => {
               <div className="flex items-center justify-between mb-6">
                 <div>
                   <h2 className="text-2xl font-bold text-gray-900">Loan Overview</h2>
-                  <p className="text-sm text-gray-500 mt-1">Tier II — Vault Trusted</p>
+                  <p className="text-sm text-gray-500 mt-1">Tier I — Verified Borrower</p>
                 </div>
                 <div className="bg-blue-500 text-white text-xs font-bold px-3 py-1 rounded-full">
-                  TIER II
+                  TIER I
                 </div>
               </div>
               
@@ -243,15 +245,15 @@ const Dashboard: React.FC = () => {
                 </div>
                 <div className="text-center md:text-left">
                   <p className="text-sm text-gray-500 mb-1">Collateral Ratio</p>
-                  <p className="text-3xl font-bold text-gray-900">7%</p>
+                  <p className="text-3xl font-bold text-gray-900">10%</p>
                 </div>
                 <div className="text-center md:text-left">
                   <p className="text-sm text-gray-500 mb-1">Next Repayment</p>
-                  <p className="text-3xl font-bold text-gray-900">25-10-2026</p>
+                  <p className="text-3xl font-bold text-gray-900">-</p>
                 </div>
                 <div className="text-center md:text-left">
                   <p className="text-sm text-gray-500 mb-1">Credit Limit</p>
-                  <p className="text-3xl font-bold text-[#3375BB]">$50,000</p>
+                  <p className="text-3xl font-bold text-[#3375BB]">$25,000</p>
                 </div>
               </div>
             </div>
@@ -300,7 +302,7 @@ const Dashboard: React.FC = () => {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-3">Select Amount (USDT)</label>
                   <div className="grid grid-cols-3 gap-2">
-                    {[500, 1000, 2500, 5000, 10000, 15000, 20000, 30000, 50000].map((amount) => (
+                    {[500, 1000, 2500, 5000, 10000, 15000, 20000, 25000].map((amount) => (
                       <button
                         key={amount}
                         onClick={() => setSelectedAmount(amount)}
@@ -321,7 +323,7 @@ const Dashboard: React.FC = () => {
               {/* Collateral Warning */}
               <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
                 <p className="text-sm text-yellow-800">
-                  ⚠️ <span className="font-semibold">Collateral Required:</span> Your wallet must hold at least 10% of the loan amount.
+                  ⚠️ <span className="font-semibold">Collateral Required:</span> Your wallet must hold at least 10% of the loan amount. These funds will be locked until the loan is repaid.
                 </p>
               </div>
 
@@ -448,19 +450,67 @@ const Dashboard: React.FC = () => {
               </div>
             </div>
 
-            {/* Chart Placeholder */}
-            <div className="bg-gray-50 rounded-xl p-6 border border-gray-200">
+            {/* Chart - 24h Loan Volume */}
+            <div className="bg-gray-50 rounded-xl p-6 border border-gray-200 animate-fade-in">
               <div className="flex items-center justify-between mb-4">
                 <h4 className="font-semibold text-gray-900">24h Loan Volume</h4>
                 <p className="text-xs text-gray-500">Last Updated: 32s ago</p>
               </div>
-              <div className="h-64 flex items-center justify-center text-gray-400">
-                {/* Placeholder for chart - can integrate Recharts or Chart.js */}
-                <div className="text-center">
-                  <div className="text-6xl mb-2">📊</div>
-                  <p className="text-sm">Chart visualization area</p>
-                  <p className="text-xs mt-1">Integrate Recharts or Chart.js here</p>
-                </div>
+              <div className="h-64 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart
+                    data={[
+                      { name: '00h', volume: 420 },
+                      { name: '04h', volume: 380 },
+                      { name: '08h', volume: 690 },
+                      { name: '12h', volume: 850 },
+                      { name: '16h', volume: 560 },
+                      { name: '20h', volume: 760 },
+                      { name: '24h', volume: 910 },
+                    ]}
+                    margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+                  >
+                    <defs>
+                      <linearGradient id="colorVolume" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8} />
+                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.1} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                    <XAxis 
+                      dataKey="name" 
+                      stroke="#6b7280" 
+                      style={{ fontSize: '12px' }}
+                      tickLine={false}
+                    />
+                    <YAxis 
+                      stroke="#6b7280" 
+                      style={{ fontSize: '12px' }}
+                      tickLine={false}
+                      tickFormatter={(value) => `${value}`}
+                    />
+                    <Tooltip 
+                      contentStyle={{
+                        backgroundColor: 'white',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '8px',
+                        fontSize: '12px',
+                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                      }}
+                      formatter={(value: number) => [`${value} ETH`, 'Volume']}
+                      labelStyle={{ color: '#374151', fontWeight: 600 }}
+                    />
+                    <Area 
+                      type="monotone" 
+                      dataKey="volume" 
+                      stroke="#3b82f6" 
+                      strokeWidth={2}
+                      fillOpacity={1} 
+                      fill="url(#colorVolume)"
+                      animationDuration={1000}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
               </div>
             </div>
           </div>
