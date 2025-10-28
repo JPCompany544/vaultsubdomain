@@ -1,51 +1,40 @@
-import { injected } from '@wagmi/connectors'
+// src/connectors/trustWalletConnector.ts
+import { injected } from '@wagmi/connectors';
 
-// Utility to detect Trust Wallet environments accurately
-function detectTrustWalletEnvironment() {
-  const ua = navigator.userAgent.toLowerCase()
-  return {
-    isAndroid: /android/i.test(ua),
-    isIOS: /iphone|ipad|ipod/i.test(ua),
-    isTrustWallet: /trust/i.test(ua),
-    isInAppBrowser:
-      /trustwallet/i.test(ua) && typeof (window as any).ethereum !== 'undefined'
-  }
-}
-
-export const TrustWalletConnector = (options?: { shimDisconnect?: boolean }) => {
-  const env = detectTrustWalletEnvironment()
-
-  return injected({
+export const TrustWalletConnector = (options?: { shimDisconnect?: boolean }) =>
+  injected({
     shimDisconnect: true,
     target() {
-      // 🔹 Only target Trust Wallet environments
-      if (env.isTrustWallet && (window as any).ethereum?.isTrust) {
-        return (window as any).ethereum
+      console.log('🎯 TrustWalletConnector target() called');
+      const ethereum = (window as any)?.ethereum;
+      
+      if (!ethereum) {
+        console.log('❌ No ethereum object in target()');
+        return undefined;
       }
 
-      // ✅ Fix: When user is inside Trust Wallet on Android (deep-linked from Chrome),
-      // disable further deep-link fallback to link.trustwallet.com
-      if (env.isAndroid && env.isTrustWallet && (window as any).ethereum) {
-        const provider = (window as any).ethereum
-        try {
-          // Ensure internal bridge usage instead of external link redirect
-          provider.isWalletConnect = false
-          provider.disableDeepLink = true
-          provider.__trustInjected = true
-        } catch (e) {
-          console.warn('Trust Wallet Android override failed:', e)
-        }
-        return provider
+      const providers: any[] = Array.isArray((ethereum as any).providers)
+        ? (ethereum as any).providers
+        : [ethereum];
+
+      console.log('🔍 Target scanning providers:', providers.length);
+      
+      const trust = providers.find(
+        (p: any) => p?.isTrust || p?.isTrustWallet || p?.providerMap?.trust || p?.__TRUST_PROVIDER__
+      );
+      
+      if (trust) {
+        console.log('✅ Target found Trust Wallet provider');
+        return {
+          id: 'trust',
+          name: 'Trust Wallet',
+          provider: trust,
+        };
       }
 
-      // Desktop: Use injected provider as usual
-      if (!env.isAndroid && (window as any).ethereum) {
-        return (window as any).ethereum
-      }
-
-      // Fallback: No provider detected
-      return undefined
+      console.log('❌ Target did not find Trust Wallet');
+      return undefined;
     },
     unstable_shimAsyncInject: 2000,
-  })
-}
+    ...(options ?? {}),
+  });
