@@ -1,6 +1,12 @@
 // src/components/ConnectWallet.tsx
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useConnect, useAccount, useDisconnect } from 'wagmi';
+import {
+  triggerTrustWalletDeepLink,
+  isReturningFromDeepLink,
+  clearDeepLinkFlags,
+  isAndroidExternalBrowser
+} from '../utils/trustWalletDeepLink';
 
 interface ConnectWalletProps {
   onConnect?: () => void;
@@ -16,6 +22,10 @@ const ConnectWallet: React.FC<ConnectWalletProps> = ({ onConnect, onDisconnect }
   // Android-specific retry tracking
   const retryAttemptedRef = useRef(false);
   const focusListenerActiveRef = useRef(false);
+  
+  // Deep link return tracking
+  const [isWaitingForProvider, setIsWaitingForProvider] = useState(false);
+  const providerCheckIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const { connect, connectors, isPending } = useConnect();
   const { address, isConnected } = useAccount();
@@ -98,13 +108,6 @@ const ConnectWallet: React.FC<ConnectWalletProps> = ({ onConnect, onDisconnect }
     const userAgent = navigator.userAgent.toLowerCase();
     return /android/i.test(userAgent) && 
            (userAgent.includes('trust') || userAgent.includes('trustwallet'));
-  }, []);
-
-  // Trust Wallet deep link trigger
-  const triggerTrustWalletDeepLink = useCallback(() => {
-    const currentUrl = encodeURIComponent(window.location.href);
-    const deepLinkUrl = `https://link.trustwallet.com/open_url?url=${currentUrl}`;
-    window.location.href = deepLinkUrl;
   }, []);
 
   // Handle connection with timeout
@@ -195,6 +198,8 @@ const ConnectWallet: React.FC<ConnectWalletProps> = ({ onConnect, onDisconnect }
       }
     } else if (isMobile()) {
       console.log('📱 Environment: Mobile - triggering deep link');
+      // Mark as user-initiated before deep link
+      sessionStorage.setItem('wagmi-user-connect', 'true');
       // Mobile browser - trigger deep link redirect
       triggerTrustWalletDeepLink();
     } else {
@@ -223,7 +228,7 @@ const ConnectWallet: React.FC<ConnectWalletProps> = ({ onConnect, onDisconnect }
         }
       }
     }
-  }, [connectors, connect, disconnect, isTrustBrowser, isMobile, isAndroidTrustWallet, triggerTrustWalletDeepLink, connectionTimeout, getTrustInjectedProvider]);
+  }, [connectors, connect, disconnect, isTrustBrowser, isMobile, isAndroidTrustWallet, connectionTimeout, getTrustInjectedProvider]);
 
   // Track component mount for hydration and prevent auto-reconnect
   useEffect(() => {
@@ -235,13 +240,103 @@ const ConnectWallet: React.FC<ConnectWalletProps> = ({ onConnect, onDisconnect }
       disconnect();
     }
   }, []);
+
+  // Handle returning from Trust Wallet deep link (Android external browsers)
+  useEffect(() => {
+    if (!mounted) return;
+
+    // Check if we're returning from a deep link
+    if (isReturningFromDeepLink() && isAndroidExternalBrowser()) {
+      console.log('🔙 Detected return from Trust Wallet deep link');
+      
+      const trustConnector = connectors.find(
+        (connector) => connector.id === 'injected' || connector.id === 'trust'
+      ) || connectors[0];
+
+      if (!trustConnector) {
+        console.error('❌ No connector available after deep link return');
+        clearDeepLinkFlags();
+        return;
+      }
+
+      // Start checking for provider injection
+      setIsWaitingForProvider(true);
+      let attempts = 0;
+      const maxAttempts = 20; // Check for 10 seconds (20 * 500ms)
+
+      const checkForProvider = () => {
+        attempts++;
+        console.log(`🔍 Checking for Trust Wallet provider (attempt ${attempts}/${maxAttempts})...`);
+
+        const ethereum = (window as any)?.ethereum;
+        
+        if (ethereum) {
+          console.log('✅ Provider detected! Attempting auto-connect...');
+          
+          // Clear the interval
+          if (providerCheckIntervalRef.current) {
+            clearInterval(providerCheckIntervalRef.current);
+            providerCheckIntervalRef.current = null;
+          }
+          
+          setIsWaitingForProvider(false);
+          clearDeepLinkFlags();
+
+          // Wait a bit for provider to stabilize, then connect
+          setTimeout(async () => {
+            try {
+              console.log('🔗 Auto-connecting after deep link return...');
+              await connect({ connector: trustConnector });
+              console.log('✅ Auto-connect successful!');
+            } catch (error) {
+              console.error('❌ Auto-connect failed:', error);
+              // Retry once
+              setTimeout(async () => {
+                try {
+                  console.log('🔄 Retrying auto-connect...');
+                  await connect({ connector: trustConnector });
+                } catch (retryError) {
+                  console.error('❌ Retry failed:', retryError);
+                }
+              }, 1000);
+            }
+          }, 500);
+        } else if (attempts >= maxAttempts) {
+          console.warn('⏱️ Provider check timeout - stopping');
+          if (providerCheckIntervalRef.current) {
+            clearInterval(providerCheckIntervalRef.current);
+            providerCheckIntervalRef.current = null;
+          }
+          setIsWaitingForProvider(false);
+          clearDeepLinkFlags();
+        }
+      };
+
+      // Start checking immediately
+      checkForProvider();
+      
+      // Then check every 500ms
+      providerCheckIntervalRef.current = setInterval(checkForProvider, 500);
+
+      // Cleanup function
+      return () => {
+        if (providerCheckIntervalRef.current) {
+          clearInterval(providerCheckIntervalRef.current);
+          providerCheckIntervalRef.current = null;
+        }
+      };
+    }
+  }, [mounted, connectors, connect]);
   
   // Cleanup any auto-reconnect attempts
   useEffect(() => {
     if (mounted && isConnected && !connectionTimeout) {
       // If connected without user action (auto-reconnect), disconnect
+      // UNLESS we're returning from a deep link
       const wasUserInitiated = sessionStorage.getItem('wagmi-user-connect');
-      if (!wasUserInitiated) {
+      const isDeepLinkReturn = isReturningFromDeepLink();
+      
+      if (!wasUserInitiated && !isDeepLinkReturn) {
         console.log('🚫 Blocking auto-reconnect - disconnecting');
         disconnect();
       }
@@ -286,7 +381,7 @@ const ConnectWallet: React.FC<ConnectWalletProps> = ({ onConnect, onDisconnect }
 
   if (!mounted) return null;
 
-  const isConnecting = isPending || !!connectionTimeout;
+  const isConnecting = isPending || !!connectionTimeout || isWaitingForProvider;
 
   return (
     <div className="connect-wallet-wrapper" ref={wrapperRef} style={{ position: 'relative', display: 'inline-block' }}>
@@ -295,7 +390,9 @@ const ConnectWallet: React.FC<ConnectWalletProps> = ({ onConnect, onDisconnect }
         onClick={isConnected ? () => setMenuOpen((v) => !v) : handleConnect}
         disabled={isConnecting}
       >
-        {isConnecting
+        {isWaitingForProvider
+          ? 'Waiting for Trust Wallet...'
+          : isConnecting
           ? 'Connecting...'
           : isConnected && address
           ? `${address.slice(0, 6)}...${address.slice(-4)}`
