@@ -13,6 +13,25 @@ export const TrustWalletConnector = (options?: { shimDisconnect?: boolean }) =>
         return undefined;
       }
 
+      // Detect if we're inside Trust Wallet's in-app browser (especially Android)
+      const userAgent = navigator.userAgent.toLowerCase();
+      const isTrustInAppBrowser = 
+        (userAgent.includes('trust') || userAgent.includes('trustwallet')) && 
+        !!ethereum;
+
+      // If we're in Trust Wallet's in-app browser, prioritize the main ethereum object
+      // This prevents Android from falling back to deep link redirects
+      if (isTrustInAppBrowser) {
+        console.log('✅ Detected Trust Wallet in-app browser - using direct provider');
+        // Return the ethereum provider directly when inside Trust Wallet
+        // This works even if isTrust flag is not set
+        return {
+          id: 'trust',
+          name: 'Trust Wallet',
+          provider: ethereum,
+        };
+      }
+
       const providers: any[] = Array.isArray((ethereum as any).providers)
         ? (ethereum as any).providers
         : [ethereum];
