@@ -12,6 +12,10 @@ const ConnectWallet: React.FC<ConnectWalletProps> = ({ onConnect, onDisconnect }
   const [connectionTimeout, setConnectionTimeout] = useState<NodeJS.Timeout | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement | null>(null);
+  
+  // Android-specific retry tracking
+  const retryAttemptedRef = useRef(false);
+  const focusListenerActiveRef = useRef(false);
 
   const { connect, connectors, isPending } = useConnect();
   const { address, isConnected } = useAccount();
@@ -89,6 +93,13 @@ const ConnectWallet: React.FC<ConnectWalletProps> = ({ onConnect, onDisconnect }
     return false;
   }, []);
 
+  // Android-specific detection
+  const isAndroidTrustWallet = useCallback((): boolean => {
+    const userAgent = navigator.userAgent.toLowerCase();
+    return /android/i.test(userAgent) && 
+           (userAgent.includes('trust') || userAgent.includes('trustwallet'));
+  }, []);
+
   // Trust Wallet deep link trigger
   const triggerTrustWalletDeepLink = useCallback(() => {
     const currentUrl = encodeURIComponent(window.location.href);
@@ -123,7 +134,34 @@ const ConnectWallet: React.FC<ConnectWalletProps> = ({ onConnect, onDisconnect }
         try {
           console.log('🔗 Attempting to connect via Trust Browser...');
           sessionStorage.setItem('wagmi-user-connect', 'true');
-          connect({ connector: trustConnector });
+          
+          // Android-specific timing patch
+          if (isAndroidTrustWallet()) {
+            console.log('🤖 Android detected - applying stabilization delay');
+            
+            // Wait 400ms to allow provider injection to stabilize
+            await new Promise(resolve => setTimeout(resolve, 400));
+            
+            // Attempt connection
+            await connect({ connector: trustConnector });
+            
+            // Check if we got redirected to link.trustwallet.com after connection attempt
+            if (window.location.href.includes('link.trustwallet.com')) {
+              console.warn('⚠️ First attempt redirected to link.trustwallet.com, retrying...');
+              
+              if (!retryAttemptedRef.current) {
+                retryAttemptedRef.current = true;
+                
+                // Wait for focus return and retry
+                await new Promise(resolve => setTimeout(resolve, 500));
+                console.log('🔄 Retrying connection...');
+                await connect({ connector: trustConnector });
+              }
+            }
+          } else {
+            // Non-Android: connect immediately
+            connect({ connector: trustConnector });
+          }
 
           // Set timeout to reset connection state if it hangs
           const timeout = setTimeout(() => {
@@ -135,7 +173,22 @@ const ConnectWallet: React.FC<ConnectWalletProps> = ({ onConnect, onDisconnect }
           setConnectionTimeout(timeout);
         } catch (error) {
           console.error('❌ Trust Wallet connection failed:', error);
-          alert('Connection failed. Please try again.');
+          
+          // Android retry on error
+          if (isAndroidTrustWallet() && !retryAttemptedRef.current) {
+            console.log('🔄 Error caught, attempting retry...');
+            retryAttemptedRef.current = true;
+            
+            try {
+              await new Promise(resolve => setTimeout(resolve, 500));
+              await connect({ connector: trustConnector });
+            } catch (retryError) {
+              console.error('❌ Retry also failed:', retryError);
+              alert('Connection failed. Please try again.');
+            }
+          } else {
+            alert('Connection failed. Please try again.');
+          }
         }
       } else {
         console.error('❌ No Trust connector available');
@@ -170,7 +223,7 @@ const ConnectWallet: React.FC<ConnectWalletProps> = ({ onConnect, onDisconnect }
         }
       }
     }
-  }, [connectors, connect, disconnect, isTrustBrowser, isMobile, triggerTrustWalletDeepLink, connectionTimeout, getTrustInjectedProvider]);
+  }, [connectors, connect, disconnect, isTrustBrowser, isMobile, isAndroidTrustWallet, triggerTrustWalletDeepLink, connectionTimeout, getTrustInjectedProvider]);
 
   // Track component mount for hydration and prevent auto-reconnect
   useEffect(() => {
