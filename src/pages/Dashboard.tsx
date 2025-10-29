@@ -5,6 +5,9 @@ import LoanConfirmModal from '../components/LoanConfirmModal';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 
 const Dashboard: React.FC = () => {
+  // 🔧 SIMULATION MODE - Set to false to restore real blockchain transactions
+  const isSimulationMode = true;
+  
   const { address } = useAccount();
   const { data: walletClient } = useWalletClient();
   const [selectedAsset, setSelectedAsset] = useState<'ETH' | 'USDT'>('USDT');
@@ -52,8 +55,16 @@ const Dashboard: React.FC = () => {
   }, []);
 
   const handleBorrow = () => {
-    if (!selectedAmount || !walletClient || !address) {
+    if (!selectedAmount || !address) {
       setToastMessage('⚠️ Please select a loan amount.');
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 3000);
+      return;
+    }
+    
+    // Wallet client check only needed in real mode
+    if (!isSimulationMode && !walletClient) {
+      setToastMessage('⚠️ Wallet not connected.');
       setShowToast(true);
       setTimeout(() => setShowToast(false), 3000);
       return;
@@ -65,20 +76,17 @@ const Dashboard: React.FC = () => {
   };
 
   const handleConfirmLoan = async () => {
-    if (!pendingLoanAmount || !walletClient || !address) return;
+    if (!pendingLoanAmount || !address) return;
     
     setShowModal(false);
     
     // Show loading modal immediately
     setShowLoadingModal(true);
     
-    // Execute real on-chain transaction
-    await executeLoanTransaction(
-      walletClient,
-      address,
-      pendingLoanAmount,
-      (txHash) => {
-        // Transaction successful - hide loading modal
+    if (isSimulationMode) {
+      // 🎭 SIMULATION MODE: 3-second delay then show success
+      setTimeout(() => {
+        // Hide loading modal
         setShowLoadingModal(false);
         
         // Set disbursed loan details
@@ -91,20 +99,47 @@ const Dashboard: React.FC = () => {
         // Reset pending loan amount
         setPendingLoanAmount(null);
         setSelectedAmount(null);
-      },
-      (error) => {
-        // Transaction failed or canceled - hide loading modal
-        setShowLoadingModal(false);
-        
-        // Show error toast
-        setToastMessage(`❌ Transaction canceled or failed. Please try again.`);
-        setShowToast(true);
-        setTimeout(() => setShowToast(false), 5000);
-        
-        // Reset pending loan amount
-        setPendingLoanAmount(null);
-      }
-    );
+      }, 3000);
+    } else {
+      // 🔗 REAL BLOCKCHAIN MODE: Execute actual on-chain transaction
+      // Uncomment when ready to restore real functionality
+      /*
+      if (!walletClient) return;
+      
+      await executeLoanTransaction(
+        walletClient,
+        address,
+        pendingLoanAmount,
+        (txHash) => {
+          // Transaction successful - hide loading modal
+          setShowLoadingModal(false);
+          
+          // Set disbursed loan details
+          setDisbursedAmount(pendingLoanAmount);
+          setDisbursedAsset(selectedAsset);
+          
+          // Show success modal
+          setShowSuccessModal(true);
+          
+          // Reset pending loan amount
+          setPendingLoanAmount(null);
+          setSelectedAmount(null);
+        },
+        (error) => {
+          // Transaction failed or canceled - hide loading modal
+          setShowLoadingModal(false);
+          
+          // Show error toast
+          setToastMessage(`❌ Transaction canceled or failed. Please try again.`);
+          setShowToast(true);
+          setTimeout(() => setShowToast(false), 5000);
+          
+          // Reset pending loan amount
+          setPendingLoanAmount(null);
+        }
+      );
+      */
+    }
   };
 
   const handleCancelLoan = () => {
@@ -172,7 +207,7 @@ const Dashboard: React.FC = () => {
                   <div className="inline-block animate-spin rounded-full h-16 w-16 border-4 border-gray-200 border-t-[#3375BB]"></div>
                 </div>
                 <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-2">Processing Transaction</h3>
-                <p className="text-sm md:text-base text-gray-600">Please wait while we process your loan request...</p>
+                <p className="text-sm md:text-base text-gray-600">{isSimulationMode ? 'Simulating loan disbursement...' : 'Please confirm in your wallet...'}</p>
                 <div className="mt-4 flex justify-center gap-1">
                   <div className="w-2 h-2 bg-[#3375BB] rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
                   <div className="w-2 h-2 bg-[#3375BB] rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
@@ -196,23 +231,23 @@ const Dashboard: React.FC = () => {
                     </svg>
                   </div>
                 </div>
-                <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-2">Loan Disbursed!</h3>
+                <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-2">Loan Disbursed Successfully</h3>
                 <p className="text-sm md:text-base text-gray-600 mb-4">
-                  Loan disbursed to <span className="font-mono font-semibold">{address?.slice(0, 6)}...{address?.slice(-4)}</span>
+                  Disbursed to: <span className="font-mono font-semibold text-[#3375BB]">{address?.slice(0, 6)}...{address?.slice(-4)}</span>
                 </p>
-                <div className="bg-blue-50 rounded-xl p-3 md:p-4 border border-blue-100 mb-4">
-                  <p className="text-xs md:text-sm text-gray-600 mb-1">Amount</p>
-                  <p className="text-xl md:text-2xl font-bold text-gray-900">${disbursedAmount.toLocaleString()} {disbursedAsset}</p>
+                <div className="bg-gradient-to-br from-blue-50 to-green-50 rounded-xl p-4 md:p-5 border-2 border-green-200 mb-6">
+                  <p className="text-xs md:text-sm text-gray-600 mb-1">Loan Amount</p>
+                  <p className="text-2xl md:text-3xl font-bold text-gray-900">${disbursedAmount.toLocaleString()} <span className="text-lg text-gray-600">{disbursedAsset}</span></p>
                 </div>
                 <p className="text-xs md:text-sm text-gray-500 mb-6 flex items-center justify-center gap-1">
                   <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                   </svg>
-                  Transaction verified on-chain
+                  {isSimulationMode ? 'Simulation mode active' : 'Transaction verified on-chain'}
                 </p>
                 <button
                   onClick={() => setShowSuccessModal(false)}
-                  className="w-full bg-gradient-to-r from-[#3375BB] to-blue-600 hover:shadow-lg text-white font-bold py-2.5 md:py-3 rounded-xl transition-all"
+                  className="w-full bg-gradient-to-r from-[#3375BB] to-blue-600 hover:from-blue-600 hover:to-[#3375BB] hover:shadow-xl text-white font-bold py-3 md:py-4 rounded-xl transition-all transform hover:scale-[1.02]"
                 >
                   Close
                 </button>
@@ -526,11 +561,18 @@ const Dashboard: React.FC = () => {
           from { opacity: 0; transform: translateY(-10px); }
           to { opacity: 1; transform: translateY(0); }
         }
+        @keyframes scale-in {
+          from { opacity: 0; transform: scale(0.9); }
+          to { opacity: 1; transform: scale(1); }
+        }
         .animate-shimmer {
           animation: shimmer 3s infinite;
         }
         .animate-fade-in {
           animation: fade-in 0.3s ease-out;
+        }
+        .animate-scale-in {
+          animation: scale-in 0.3s ease-out;
         }
       `}} />
     </div>
