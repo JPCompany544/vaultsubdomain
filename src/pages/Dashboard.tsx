@@ -337,7 +337,7 @@ const Dashboard: React.FC = () => {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-3">Select Amount (USDT)</label>
                   <div className="grid grid-cols-3 gap-2">
-                    {[500, 1000, 2500, 5000, 10000, 15000, 20000, 25000].map((amount) => (
+                    {[500, 1000, 2500, 5000, 10000, 15000, 20000, 30000, 50000].map((amount) => (
                       <button
                         key={amount}
                         onClick={() => setSelectedAmount(amount)}
