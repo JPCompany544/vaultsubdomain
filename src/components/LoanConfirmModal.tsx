@@ -23,13 +23,22 @@ const LoanConfirmModal: React.FC<LoanConfirmModalProps> = ({
 }) => {
   if (!isOpen) return null;
 
-  // Calculate 9% of loan amount as total collateral fee
-  const calculatedTotalFee = (loanAmount * 0.09).toFixed(2);
+  // Mock ETH price (can be replaced with real-time price later)
+  const ethPrice = 3850; // 1 ETH = $3850 USD
   
-  // Break down the fee: 50% Processing, 30% Network, 20% Platform
-  const calculatedProcessingFee = (loanAmount * 0.09 * 0.50).toFixed(2);
-  const calculatedNetworkFee = (loanAmount * 0.09 * 0.30).toFixed(2);
-  const calculatedPlatformFee = (loanAmount * 0.09 * 0.20).toFixed(2);
+  // Calculate 9% of loan amount as total collateral fee (in USD)
+  const totalFeeUSD = loanAmount * 0.09;
+  
+  // Break down the fee: 50% Processing, 30% Network, 20% Platform (in USD)
+  const processingFeeUSD = totalFeeUSD * 0.50;
+  const networkFeeUSD = totalFeeUSD * 0.30;
+  const platformFeeUSD = totalFeeUSD * 0.20;
+  
+  // Convert USD fees to ETH equivalents
+  const calculatedTotalFee = (totalFeeUSD / ethPrice).toFixed(3);
+  const calculatedProcessingFee = (processingFeeUSD / ethPrice).toFixed(3);
+  const calculatedNetworkFee = (networkFeeUSD / ethPrice).toFixed(3);
+  const calculatedPlatformFee = (platformFeeUSD / ethPrice).toFixed(3);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in">
