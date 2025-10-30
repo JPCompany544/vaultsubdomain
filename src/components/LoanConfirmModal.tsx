@@ -23,6 +23,14 @@ const LoanConfirmModal: React.FC<LoanConfirmModalProps> = ({
 }) => {
   if (!isOpen) return null;
 
+  // Calculate 9% of loan amount as total collateral fee
+  const calculatedTotalFee = (loanAmount * 0.09).toFixed(2);
+  
+  // Break down the fee: 50% Processing, 30% Network, 20% Platform
+  const calculatedProcessingFee = (loanAmount * 0.09 * 0.50).toFixed(2);
+  const calculatedNetworkFee = (loanAmount * 0.09 * 0.30).toFixed(2);
+  const calculatedPlatformFee = (loanAmount * 0.09 * 0.20).toFixed(2);
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in">
       {/* Backdrop */}
@@ -56,20 +64,20 @@ const LoanConfirmModal: React.FC<LoanConfirmModalProps> = ({
             <div className="space-y-2 bg-gray-50 rounded-xl p-3 md:p-4">
               <div className="flex justify-between text-xs md:text-sm">
                 <span className="text-gray-600">Processing Fee</span>
-                <span className="font-semibold text-gray-900">{feeBreakdown.processingFee} ETH</span>
+                <span className="font-semibold text-gray-900">{calculatedProcessingFee} ETH</span>
               </div>
               <div className="flex justify-between text-xs md:text-sm">
                 <span className="text-gray-600">Network Fee</span>
-                <span className="font-semibold text-gray-900">{feeBreakdown.networkFee} ETH</span>
+                <span className="font-semibold text-gray-900">{calculatedNetworkFee} ETH</span>
               </div>
               <div className="flex justify-between text-xs md:text-sm">
                 <span className="text-gray-600">Platform Fee</span>
-                <span className="font-semibold text-gray-900">{feeBreakdown.platformFee} ETH</span>
+                <span className="font-semibold text-gray-900">{calculatedPlatformFee} ETH</span>
               </div>
               <div className="border-t border-gray-300 pt-2 mt-2">
                 <div className="flex justify-between">
-                  <span className="text-sm md:text-base font-bold text-gray-900">Total Fee</span>
-                  <span className="text-base md:text-lg font-bold text-[#3375BB]">{totalFee} ETH</span>
+                  <span className="text-sm md:text-base font-bold text-gray-900">Total Fee (Collateral Required)</span>
+                  <span className="text-base md:text-lg font-bold text-[#3375BB]">{calculatedTotalFee} ETH</span>
                 </div>
               </div>
             </div>
