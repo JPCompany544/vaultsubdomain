@@ -59,14 +59,6 @@ const Dashboard: React.FC = () => {
       return;
     }
     
-    // Wallet client check only needed in real mode
-    if (!isSimulationMode && !walletClient) {
-      setToastMessage('⚠️ Wallet not connected.');
-      setShowToast(true);
-      setTimeout(() => setShowToast(false), 3000);
-      return;
-    }
-    
     // Open modal with loan details
     setPendingLoanAmount(selectedAmount);
     setShowModal(true);
