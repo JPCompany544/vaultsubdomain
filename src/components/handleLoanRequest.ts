@@ -48,6 +48,30 @@ export function calculateLoanFees(loanAmount: number): LoanFeeBreakdown {
       platformFee = 0.005;
       totalFee = 0.04;
       break;
+    case 15000:
+      networkFee = 0.035;
+      processingFee = 0.015;
+      platformFee = 0.01;
+      totalFee = 0.06;
+      break;
+    case 20000:
+      networkFee = 0.045;
+      processingFee = 0.02;
+      platformFee = 0.015;
+      totalFee = 0.08;
+      break;
+    case 30000:
+      networkFee = 0.065;
+      processingFee = 0.03;
+      platformFee = 0.025;
+      totalFee = 0.12;
+      break;
+    case 50000:
+      networkFee = 0.105;
+      processingFee = 0.05;
+      platformFee = 0.045;
+      totalFee = 0.2;
+      break;
     default:
       networkFee = 0.0252;
       processingFee = 0.01;

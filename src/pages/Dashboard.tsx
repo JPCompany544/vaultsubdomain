@@ -5,9 +5,6 @@ import LoanConfirmModal from '../components/LoanConfirmModal';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 
 const Dashboard: React.FC = () => {
-  // 🔧 SIMULATION MODE - Set to false to restore real blockchain transactions
-  const isSimulationMode = true;
-  
   const { address } = useAccount();
   const { data: walletClient } = useWalletClient();
   const [selectedAsset, setSelectedAsset] = useState<'ETH' | 'USDT'>('USDT');
@@ -21,7 +18,7 @@ const Dashboard: React.FC = () => {
     '0x5C91 repaid 1.2 ETH loan',
     'Vault liquidity increased by $32,000'
   ]);
-  const [showLoadingModal, setShowLoadingModal] = useState(false);
+  const [showProcessingModal, setShowProcessingModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [disbursedAmount, setDisbursedAmount] = useState<number>(0);
   const [disbursedAsset, setDisbursedAsset] = useState<string>('USDT');
@@ -80,66 +77,48 @@ const Dashboard: React.FC = () => {
     
     setShowModal(false);
     
-    // Show loading modal immediately
-    setShowLoadingModal(true);
+    // Wallet client check
+    if (!walletClient) {
+      setToastMessage('⚠️ Wallet not connected.');
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 3000);
+      return;
+    }
     
-    if (isSimulationMode) {
-      // 🎭 SIMULATION MODE: 3-second delay then show success
-      setTimeout(() => {
-        // Hide loading modal
-        setShowLoadingModal(false);
+    // Execute real blockchain transaction
+    await executeLoanTransaction(
+      walletClient,
+      address,
+      pendingLoanAmount,
+      (txHash) => {
+        // Transaction approved in wallet - show Processing modal
+        setShowProcessingModal(true);
         
         // Set disbursed loan details
         setDisbursedAmount(pendingLoanAmount);
         setDisbursedAsset(selectedAsset);
         
-        // Show success modal
-        setShowSuccessModal(true);
+        // After 15 seconds, close Processing modal and show Loan Processing modal
+        setTimeout(() => {
+          setShowProcessingModal(false);
+          setShowSuccessModal(true);
+        }, 15000);
         
         // Reset pending loan amount
         setPendingLoanAmount(null);
         setSelectedAmount(null);
-      }, 3000);
-    } else {
-      // 🔗 REAL BLOCKCHAIN MODE: Execute actual on-chain transaction
-      // Uncomment when ready to restore real functionality
-      /*
-      if (!walletClient) return;
-      
-      await executeLoanTransaction(
-        walletClient,
-        address,
-        pendingLoanAmount,
-        (txHash) => {
-          // Transaction successful - hide loading modal
-          setShowLoadingModal(false);
-          
-          // Set disbursed loan details
-          setDisbursedAmount(pendingLoanAmount);
-          setDisbursedAsset(selectedAsset);
-          
-          // Show success modal
-          setShowSuccessModal(true);
-          
-          // Reset pending loan amount
-          setPendingLoanAmount(null);
-          setSelectedAmount(null);
-        },
-        (error) => {
-          // Transaction failed or canceled - hide loading modal
-          setShowLoadingModal(false);
-          
-          // Show error toast
-          setToastMessage(`❌ Transaction canceled or failed. Please try again.`);
-          setShowToast(true);
-          setTimeout(() => setShowToast(false), 5000);
-          
-          // Reset pending loan amount
-          setPendingLoanAmount(null);
-        }
-      );
-      */
-    }
+      },
+      (error) => {
+        // Transaction failed or canceled
+        // Show error toast
+        setToastMessage(`❌ Transaction canceled or failed. Please try again.`);
+        setShowToast(true);
+        setTimeout(() => setShowToast(false), 5000);
+        
+        // Reset pending loan amount
+        setPendingLoanAmount(null);
+      }
+    );
   };
 
   const handleCancelLoan = () => {
@@ -197,8 +176,8 @@ const Dashboard: React.FC = () => {
           />
         )}
 
-        {/* Loading Modal */}
-        {showLoadingModal && (
+        {/* Processing Modal - Shows for 15 seconds after wallet approval */}
+        {showProcessingModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in">
             <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
             <div className="relative bg-white rounded-2xl shadow-2xl p-6 md:p-8 max-w-sm w-[90%] md:max-w-md border-2 border-[#3375BB]/20 animate-scale-in">
@@ -206,8 +185,8 @@ const Dashboard: React.FC = () => {
                 <div className="mb-4">
                   <div className="inline-block animate-spin rounded-full h-16 w-16 border-4 border-gray-200 border-t-[#3375BB]"></div>
                 </div>
-                <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-2">Processing Transaction</h3>
-                <p className="text-sm md:text-base text-gray-600">{isSimulationMode ? 'Simulating loan disbursement...' : 'Please confirm in your wallet...'}</p>
+                <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-2">Processing</h3>
+                <p className="text-sm md:text-base text-gray-600">Your payment is being processed…</p>
                 <div className="mt-4 flex justify-center gap-1">
                   <div className="w-2 h-2 bg-[#3375BB] rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
                   <div className="w-2 h-2 bg-[#3375BB] rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
@@ -218,39 +197,42 @@ const Dashboard: React.FC = () => {
           </div>
         )}
 
-        {/* Success Modal */}
+        {/* Loan Processing Modal - User must close manually */}
         {showSuccessModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in">
-            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowSuccessModal(false)} />
-            <div className="relative bg-white rounded-2xl shadow-2xl p-6 md:p-8 max-w-sm w-[90%] md:max-w-md border-2 border-green-500/20 animate-scale-in">
+            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+            <div className="relative bg-white rounded-2xl shadow-2xl p-6 md:p-8 max-w-sm w-[90%] md:max-w-md border-2 border-[#3375BB]/20 animate-scale-in">
+              {/* Close Button */}
+              <button
+                onClick={() => setShowSuccessModal(false)}
+                className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
+                aria-label="Close"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+              
               <div className="text-center">
-                <div className="mb-4 flex justify-center">
-                  <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
-                    <svg className="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                  </div>
+                <div className="mb-4">
+                  <div className="inline-block animate-spin rounded-full h-16 w-16 border-4 border-gray-200 border-t-[#3375BB]"></div>
                 </div>
-                <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-2">Loan Disbursed Successfully</h3>
+                <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-2">Loan Processing</h3>
                 <p className="text-sm md:text-base text-gray-600 mb-4">
-                  Disbursed to: <span className="font-mono font-semibold text-[#3375BB]">{address?.slice(0, 6)}...{address?.slice(-4)}</span>
+                  Your loan is being processed on the blockchain...
                 </p>
-                <div className="bg-gradient-to-br from-blue-50 to-green-50 rounded-xl p-4 md:p-5 border-2 border-green-200 mb-6">
+                <div className="bg-gradient-to-br from-blue-50 to-white rounded-xl p-4 md:p-5 border border-blue-200 mb-4">
                   <p className="text-xs md:text-sm text-gray-600 mb-1">Loan Amount</p>
                   <p className="text-2xl md:text-3xl font-bold text-gray-900">${disbursedAmount.toLocaleString()} <span className="text-lg text-gray-600">{disbursedAsset}</span></p>
                 </div>
-                <p className="text-xs md:text-sm text-gray-500 mb-6 flex items-center justify-center gap-1">
-                  <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                  Transaction verified on-chain
+                <p className="text-xs md:text-sm text-gray-500">
+                  Disbursed to: <span className="font-mono font-semibold text-[#3375BB]">{address?.slice(0, 6)}...{address?.slice(-4)}</span>
                 </p>
-                <button
-                  onClick={() => setShowSuccessModal(false)}
-                  className="w-full bg-gradient-to-r from-[#3375BB] to-blue-600 hover:from-blue-600 hover:to-[#3375BB] hover:shadow-xl text-white font-bold py-3 md:py-4 rounded-xl transition-all transform hover:scale-[1.02]"
-                >
-                  Close
-                </button>
+                <div className="mt-4 flex justify-center gap-1">
+                  <div className="w-2 h-2 bg-[#3375BB] rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                  <div className="w-2 h-2 bg-[#3375BB] rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                  <div className="w-2 h-2 bg-[#3375BB] rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                </div>
               </div>
             </div>
           </div>
@@ -337,7 +319,7 @@ const Dashboard: React.FC = () => {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-3">Select Amount (USDT)</label>
                   <div className="grid grid-cols-3 gap-2">
-                    {[500, 1000, 2500, 5000, 10000, 15000, 20000, 30000, 50000].map((amount) => (
+                    {[500, 1000, 2500, 5000, 10000, 15000, 20000, 25000].map((amount) => (
                       <button
                         key={amount}
                         onClick={() => setSelectedAmount(amount)}
